@@ -62,7 +62,7 @@ for (s,c) in zip(components, COMPONENTS_TUPLES)]
 
 WIDTH = 30
 HEIGHT = 30
-all_components_in_bound = [And([c[0] + w <= WIDTH, c[1] + h <= HEIGHT]) for (c,(w,h)) in zip(components, COMPONENTS_TUPLES)]
+all_components_in_bound = [And([c[0] + w <= WIDTH, c[1] + h <= HEIGHT, c[0] >= 0, c[1] >= 0]) for (c,(w,h)) in zip(components, COMPONENTS_TUPLES)]
 
 # Every square on the chip has a int variable that is set to the component number that uses it, unbound is empty.
 
@@ -95,19 +95,40 @@ def no_overlap():
         res.append(enforce_component(c_no))
     return flatten(res)
 
-def reformat(s):
-    clean = s.replace("[", "").replace("]", "").replace(",", "").replace(" ", "")
-    head = clean[:-4]
-    tail = int(clean[-1:])
-    return (head, tail)
+def sq_string_to_coords(s):
+    tail = str(s)[3:]
+    strx, stry = tail.split("*")
+    x = int(strx)
+    y = int(stry)
+    return (x, y)
 
-def capture_solve_filter():
+def get_assignment():
+    set_option(max_args=10000)
+    s: Solver = Solver()
     print("Solving")
-    with Capturing() as output:
-        solve(flatten(components_sizes)) #+ all_components_in_bound + no_overlap())
-    return {k:v for (k,v) in map(reformat, filter(lambda s: "cp" or "po" in s, output))}
+    nov = no_overlap()
+    #print(nov[0])
 
-print(capture_solve_filter())
+    flat_squares = flatten(squares)
+    s.add(flatten(components_sizes) + all_components_in_bound + nov)
+    s.check()
+    m = s.model()
+    results = [m.evaluate(var) for var in flat_squares]
+    return [(sq_string_to_coords(sq), res) for (sq, res) in zip(flat_squares, results)]
+    # m = s.model()
+    # print(len(m))
+    # for n in m:
+    #     print(n)
+
+board = [["." for y in range(HEIGHT)] for x in range(WIDTH)]
+solution = get_assignment()
+
+for ((x,y), v) in solution:
+    board[y][x] = v
+
+for row in board:
+    print(' '.join(map(str, row)))
+#print(capture_solve_filter())
 
 #print(claim_space(29, 0, 5, 6, 77))
 
