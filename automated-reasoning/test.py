@@ -19,7 +19,6 @@ G = [[Bool(f"g_{i}_{j}") for j in range(GOATS)] for i in range(BUSSES)]
 PEARS = 20
 W_PEARS = 400
 P = [[Bool(f"p_{i}_{j}") for j in range(PEARS)] for i in range(BUSSES)]
-#bus_weight_limit = [B[i] <= W_BUS for i in range(BUSSES)]
 
 W_APPLES = 400
 A = [Int(f"a_{i}") for i in range(BUSSES)]
@@ -91,7 +90,7 @@ phi = all_saffron_in_at_least_one_bus + no_one_saffron_in_two_busses + all_mushr
 #print(phi)
 
 s = Solver()
-sadd(phi)
+s.add(phi)
 s.check()
 m = s.model()
 total_apples = Sum([m.evaluate(A[i]) for i in range(BUSSES)])
