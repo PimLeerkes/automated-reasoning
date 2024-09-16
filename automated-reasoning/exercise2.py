@@ -2,6 +2,10 @@ from z3 import *
 from itertools import product
 from io import StringIO 
 import sys
+import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
+import copy
+from collections import namedtuple
 
 class Capturing(list):
     def __enter__(self):
@@ -16,6 +20,8 @@ class Capturing(list):
 def flatten(xss):
     return [x for xs in xss for x in xs]
 
+# The sizes of the ten regular components are 4 × 5, 4 × 6, 5 × 20, 6 × 9, 6 × 10, 6 × 11,
+# 7 × 8, 7 × 12, 10 × 10, 10 × 20, respectively.
 REGULAR_COMPONENTS_TUPLES = [
     (4, 5),
     (4, 6),
@@ -35,8 +41,7 @@ POWER_COMPONENTS_TUPLES = [
 
 COMPONENTS_TUPLES = REGULAR_COMPONENTS_TUPLES + POWER_COMPONENTS_TUPLES
 
-# The sizes of the ten regular components are 4 × 5, 4 × 6, 5 × 20, 6 × 9, 6 × 10, 6 × 11,
-# 7 × 8, 7 × 12, 10 × 10, 10 × 20, respectively.
+
 regular_components = [[Int(f"cp_{i}_{s[0]}*{s[1]}_x"), 
                        Int(f"cp_{i}_{s[0]}*{s[1]}_y"),
                        Int(f"cp_{i}_{s[0]}*{s[1]}_w"),
@@ -60,81 +65,100 @@ components_sizes = [
     )]
 for (s,c) in zip(components, COMPONENTS_TUPLES)]
 
+def other_components(component):
+    others = copy.deepcopy(components)
+    others.remove(component)
+    return others
+
 WIDTH = 30
 HEIGHT = 30
-all_components_in_bound = [And([c[0] + w <= WIDTH, c[1] + h <= HEIGHT, c[0] >= 0, c[1] >= 0]) for (c,(w,h)) in zip(components, COMPONENTS_TUPLES)]
+Point = namedtuple("Point", "x y")
+def tl(rect):
+    return Point(rect[0], rect[1])
 
-# Every square on the chip has a int variable that is set to the component number that uses it, unbound is empty.
+def tr(rect):
+    return Point(rect[0] + rect[2], rect[1])
 
-# squares[x][y]
-squares = [[Int(f"sq_{x}*{y}") for y in range(HEIGHT)] for x in range(WIDTH)]
+def bl(rect):
+    return Point(rect[0], rect[1] + rect[3])
 
-# Now just enforce using squares
-def claim_space(x, y, w, h, c_no):
-    try:
-        return And([squares[x_][y_] == c_no for (x_, y_) in product(range(x, x+w), range(y, y+h))])
-    except IndexError:
-        return And([])
+def br(rect):
+    return Point(rect[0] + rect[2], rect[1] + rect[3])
 
-def get_w(c_no):
-    return COMPONENTS_TUPLES[c_no][0]
+all_components_in_bound = [
+    And([
+        tl(c).x >= 0,
+        tl(c). y >= 0,
+        br(c).x <= WIDTH,
+        br(c).y <= HEIGHT]) 
+for (c,(w,h)) in zip(components, COMPONENTS_TUPLES)]
 
-def get_h(c_no):
-    return COMPONENTS_TUPLES[c_no][1]
+no_components_overlap = [
+    And([
+        (Or([
+            tr(c).x <= bl(o).x,
+            bl(c).x >= tr(o).x,
+            tr(c).y >= bl(o).y,
+            bl(c).y <= tr(o).y,
+        ]))
+    for o in other_components(c)])
+for c in components]
 
-def enforce_component(c_no):
-    comp = components[c_no]
-    return [
-        Implies(And(comp[0] == x, comp[1] == y), claim_space(x, y, get_w(c_no), get_h(c_no), c_no))
-    for (x,y) in product(range(WIDTH), range(HEIGHT))]
+def touch(c1, c2):
+    return Or(
+        And([tl(c1).x == tr(c2).x, Or(br(c1).y < tl(c2).y, tr(c1).y < bl(c2).y)]), # Left right
+        And([tr(c1).x == tl(c2).x, Or(br(c1).y < tl(c2).y, tr(c1).y < bl(c2).y)]), # Right left
+        And([tl(c1).y == bl(c1).y, ]),
+        And([bl(c1).y == tl(c1).y, ]),
+        # tr(c1).x == tl(c2).x, # Right left
+        # tl(c1).y == bl(c1).y, # Top bottom
+        # bl(c1).y == tl(c1).y # Bottom top
+    )
 
-def no_overlap():
-    res = []
-    for c_no in range(len(COMPONENTS_TUPLES)):
-        print(c_no)
-        res.append(enforce_component(c_no))
-    return flatten(res)
+connected_to_power = [
+    Or([
+        touch(co, po) for po in power_components
+    ]) for co in regular_components
+]
+print(connected_to_power[0])
 
-def sq_string_to_coords(s):
-    tail = str(s)[3:]
-    strx, stry = tail.split("*")
-    x = int(strx)
-    y = int(stry)
-    return (x, y)
+s = Solver()
+print("Solving")
+s.add(flatten(components_sizes) + all_components_in_bound + no_components_overlap + connected_to_power)
+s.check()
+m = s.model()
 
-def get_assignment():
-    set_option(max_args=10000)
-    s: Solver = Solver()
-    print("Solving")
-    nov = no_overlap()
-    #print(nov[0])
+results = {var: m.evaluate(var) for var in flatten(power_components)}
+print(results)
 
-    flat_squares = flatten(squares)
-    s.add(flatten(components_sizes) + all_components_in_bound + nov)
-    s.check()
-    m = s.model()
-    results = [m.evaluate(var) for var in flat_squares]
-    return [(sq_string_to_coords(sq), res) for (sq, res) in zip(flat_squares, results)]
-    # m = s.model()
-    # print(len(m))
-    # for n in m:
-    #     print(n)
+#define Matplotlib figure and axis
+fig, ax = plt.subplots()
+fig.set_size_inches(10, 10)
 
-board = [["." for y in range(HEIGHT)] for x in range(WIDTH)]
-solution = get_assignment()
+def plot_rects(comps: list, facecolor=None):
+    ax.plot([0, 0],[0, WIDTH])
+    ax.plot([0, WIDTH],[0, 0])
+    colors = ["red", "green", "blue", "orange", "gray", "purple"]
+    for n, rect in enumerate(comps):
+        x = m.evaluate(rect[0]).as_long()
+        y = m.evaluate(rect[1]).as_long()
+        w = m.evaluate(rect[2]).as_long()
+        h = m.evaluate(rect[3]).as_long()
+        print(rect[0], x)
+        print(rect[1], y)
+        print(rect[2], w)
+        print(rect[3], h)
+        color = facecolor if facecolor is not None else colors[n % len(colors)]
+        ax.add_patch(Rectangle((x, y), w, h, facecolor=color, edgecolor="white"))
 
-for ((x,y), v) in solution:
-    board[y][x] = v
 
-for row in board:
-    print(' '.join(map(str, row)))
-#print(capture_solve_filter())
+plot_rects(regular_components)
+plot_rects(power_components, "black")
+#create simple line plot
 
-#print(claim_space(29, 0, 5, 6, 77))
 
-# chip_width = Int("width")
-# chip_height = Int("height")
+#add rectangle to plot
 
-# # pc = power component
-# pc_width = Int("pc_width")
-# pc_height = Int("pc_height")
+
+#display plot
+plt.show()
