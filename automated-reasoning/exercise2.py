@@ -122,13 +122,13 @@ def touch(c1, c2):
             And(tr(c1).y < tl(c2).y, tl(c2).y <= br(c1).y)
             ])]), # Right left
         And([tl(c1).y == bl(c2).y, Or([
-            And(bl(c1).x < tr(c2).x, tr(c2).x < br(c1).x),
-            And(bl(c1).x < tl(c2).x, tl(c2).x < br(c1).x),
+            And(bl(c1).x < tr(c2).x, tr(c2).x <= br(c1).x),
+            And(bl(c1).x < tl(c2).x, tl(c2).x <= br(c1).x),
         ])
         ]), # Top bottom
         And([bl(c1).y == tl(c2).y, Or([
-            And(bl(c1).x < tr(c2).x, tr(c2).x < br(c1).x),
-            And(bl(c1).x < tl(c2).x, tl(c2).x < br(c1).x),
+            And(bl(c1).x < tr(c2).x, tr(c2).x <= br(c1).x),
+            And(bl(c1).x < tl(c2).x, tl(c2).x <= br(c1).x),
         ])
         ]), # Bottom top
         # tr(c1).x == tl(c2).x, # Right left
