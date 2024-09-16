@@ -23,7 +23,7 @@ def flatten(xss):
 # The sizes of the ten regular components are 4 × 5, 4 × 6, 5 × 20, 6 × 9, 6 × 10, 6 × 11,
 # 7 × 8, 7 × 12, 10 × 10, 10 × 20, respectively.
 REGULAR_COMPONENTS_TUPLES = [
-    #(4, 5),
+    (4, 5),
     (4, 6),
     (5, 20),
     (6, 9),
@@ -32,7 +32,7 @@ REGULAR_COMPONENTS_TUPLES = [
     (7,8),
     (7,12),
     (10,10),
-    # (10,20)
+    (10,20)
 ]
 POWER_COMPONENTS_TUPLES = [
     (4,3),
@@ -104,6 +104,8 @@ no_components_overlap = [
     for o in other_components(c)])
 for c in components]
 
+
+
 def touch(c1, c2):
     return Or([
         # And([tl(c1).x == tr(c2).x, Or(br(c1).y < tl(c2).y, tr(c1).y < bl(c2).y)]), # Left right
@@ -111,12 +113,13 @@ def touch(c1, c2):
         # And([tl(c1).y == bl(c1).y, Or(bl(c1).x < tr(c2).x, br(c1).x > tl(c2).x)]), # Top bottom
         # And([bl(c1).y == tl(c1).y, Or(bl(c1).x < tr(c2).x, br(c1).x > tl(c2).x)]), # Bottom top
         And([tl(c1).x == tr(c2).x, Or([
-            And(tr(c1).y < bl(c2).y, bl(c2).y < br(c1).y),
-            And(tr(c1).y < tl(c2).y, tl(c2).y < br(c1).y),
+            And(tr(c1).y < bl(c2).y, bl(c2).y <= br(c1).y),
+            And(tr(c1).y < tl(c2).y, tl(c2).y <= br(c1).y),
+
             ])]), # Left right
         And([tr(c1).x == tl(c2).x, Or([
-            And(tr(c1).y < bl(c2).y, bl(c2).y < br(c1).y),
-            And(tr(c1).y < tl(c2).y, tl(c2).y < br(c1).y)
+            And(tr(c1).y < bl(c2).y, bl(c2).y <= br(c1).y),
+            And(tr(c1).y < tl(c2).y, tl(c2).y <= br(c1).y)
             ])]), # Right left
         And([tl(c1).y == bl(c2).y, Or([
             And(bl(c1).x < tr(c2).x, tr(c2).x < br(c1).x),
