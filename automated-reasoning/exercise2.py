@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 import copy
 from collections import namedtuple
+from math import dist
 
 class Capturing(list):
     def __enter__(self):
@@ -104,48 +105,70 @@ no_components_overlap = [
     for o in other_components(c)])
 for c in components]
 
-
+def eq(p1, p2):
+    return And(p1.x == p2.x, p1.y == p2.y)
 
 def touch(c1, c2):
-    return Or([
-        # And([tl(c1).x == tr(c2).x, Or(br(c1).y < tl(c2).y, tr(c1).y < bl(c2).y)]), # Left right
-        # And([tr(c1).x == tl(c2).x, Or(br(c1).y < tl(c2).y, tr(c1).y < bl(c2).y)]), # Right left
-        # And([tl(c1).y == bl(c1).y, Or(bl(c1).x < tr(c2).x, br(c1).x > tl(c2).x)]), # Top bottom
-        # And([bl(c1).y == tl(c1).y, Or(bl(c1).x < tr(c2).x, br(c1).x > tl(c2).x)]), # Bottom top
+    return And([Or([
         And([tl(c1).x == tr(c2).x, Or([
-            And(tr(c1).y < bl(c2).y, bl(c2).y <= br(c1).y),
-            And(tr(c1).y < tl(c2).y, tl(c2).y <= br(c1).y),
-
-            ])]), # Left right
+            And(tr(c1).y <= bl(c2).y, bl(c2).y <= br(c1).y),
+            And(tr(c1).y <= tl(c2).y, tl(c2).y <= br(c1).y),
+            ]),
+        Not(tr(c1).y == bl(c2).y),
+        Not(bl(c1).y == tl(c2).y)
+            ]), # Left right
         And([tr(c1).x == tl(c2).x, Or([
-            And(tr(c1).y < bl(c2).y, bl(c2).y <= br(c1).y),
-            And(tr(c1).y < tl(c2).y, tl(c2).y <= br(c1).y)
-            ])]), # Right left
+            And(tr(c1).y <= bl(c2).y, bl(c2).y <= br(c1).y),
+            And(tr(c1).y <= tl(c2).y, tl(c2).y <= br(c1).y),
+            ]),
+        Not(tr(c1).y == bl(c2).y),
+        Not(bl(c1).y == tl(c2).y)
+            ]), # Right left
         And([tl(c1).y == bl(c2).y, Or([
-            And(bl(c1).x < tr(c2).x, tr(c2).x <= br(c1).x),
-            And(bl(c1).x < tl(c2).x, tl(c2).x <= br(c1).x),
-        ])
+            And(bl(c1).x <= tr(c2).x, tr(c2).x <= br(c1).x),
+            And(bl(c1).x <= tl(c2).x, tl(c2).x <= br(c1).x),
+        ]),
+        Not(bl(c1).x == tr(c2).x),
+        Not(br(c1).x == tl(c2).x)
         ]), # Top bottom
         And([bl(c1).y == tl(c2).y, Or([
-            And(bl(c1).x < tr(c2).x, tr(c2).x <= br(c1).x),
-            And(bl(c1).x < tl(c2).x, tl(c2).x <= br(c1).x),
-        ])
+            And(bl(c1).x <= tr(c2).x, tr(c2).x <= br(c1).x),
+            And(bl(c1).x <= tl(c2).x, tl(c2).x <= br(c1).x),
+        ]),
+        Not(bl(c1).x == tr(c2).x),
+        Not(br(c1).x == tl(c2).x)
         ]), # Bottom top
-        # tr(c1).x == tl(c2).x, # Right left
-        # tl(c1).y == bl(c1).y, # Top bottom
-        # bl(c1).y == tl(c1).y # Bottom top
     ])
+    ])
+
+D = 18
+
+def get_center(rect):
+    return Point(tl(rect).x + rect[2] / 2, tl(rect).y + rect[3] /2)
 
 connected_to_power = [
     Or([
         touch(co, po) for po in power_components
     ]) for co in regular_components
 ]
-print(connected_to_power[0])
+
+#print(connected_to_power[0])
+
+p1 = power_components[0]
+p2 = power_components[1]
+
+power_component_distance = [Or([
+    get_center(p1).x >= get_center(p2).x + D,
+    get_center(p2).x >= get_center(p1).x + D,
+    get_center(p1).y >= get_center(p2).y + D,
+    get_center(p2).y >= get_center(p1).y + D,
+])]
+
+print(power_component_distance)
 
 s = Solver()
 print("Solving")
-s.add(flatten(components_sizes) + all_components_in_bound + no_components_overlap + connected_to_power)
+s.add(flatten(components_sizes) + all_components_in_bound + no_components_overlap + connected_to_power + power_component_distance)
 s.check()
 m = s.model()
 
@@ -165,10 +188,6 @@ def plot_rects(comps: list, facecolor=None):
         y = m.evaluate(rect[1]).as_long()
         w = m.evaluate(rect[2]).as_long()
         h = m.evaluate(rect[3]).as_long()
-        print(rect[0], x)
-        print(rect[1], y)
-        print(rect[2], w)
-        print(rect[3], h)
         color = facecolor if facecolor is not None else colors[n % len(colors)]
         ax.add_patch(Rectangle((x, y), w, h, facecolor=color, edgecolor="white"))
 
