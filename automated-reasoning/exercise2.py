@@ -8,16 +8,6 @@ import copy
 from collections import namedtuple
 from math import dist
 
-class Capturing(list):
-    def __enter__(self):
-        self._stdout = sys.stdout
-        sys.stdout = self._stringio = StringIO()
-        return self
-    def __exit__(self, *args):
-        self.extend(self._stringio.getvalue().splitlines())
-        del self._stringio    # free up some memory
-        sys.stdout = self._stdout
-
 def flatten(xss):
     return [x for xs in xss for x in xs]
 
@@ -141,10 +131,11 @@ def touch(c1, c2):
     ])
     ])
 
-D = 18
+D = 19
+# This part goes wrong due to rounding errors. We still find a solution for 19, but it's actually a solution for 18
 
 def get_center(rect):
-    return Point(tl(rect).x + rect[2] / 2, tl(rect).y + rect[3] /2)
+    return Point(tl(rect).x + rect[2], tl(rect).y + rect[3])
 
 connected_to_power = [
     Or([
@@ -156,6 +147,7 @@ connected_to_power = [
 
 p1 = power_components[0]
 p2 = power_components[1]
+
 
 power_component_distance = [Or([
     get_center(p1).x >= get_center(p2).x + D,
@@ -192,8 +184,8 @@ def plot_rects(comps: list, facecolor=None):
         ax.add_patch(Rectangle((x, y), w, h, facecolor=color, edgecolor="white"))
 
 
-plot_rects(regular_components)
-plot_rects(power_components, "black")
+plot_rects(regular_components, "blue")
+plot_rects(power_components, "yellow")
 #create simple line plot
 
 
