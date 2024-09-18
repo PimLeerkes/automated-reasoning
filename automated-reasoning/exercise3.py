@@ -28,8 +28,6 @@ each_round_has_five_people_per_house = [And(Sum(PR[i]) == 5, And([Or(PR[i][j] ==
 
 every_couple_hosts_two_rounds_in_their_house = [And(Sum(Sum([R_a[j] == i for j in range(ROUNDS)]),Sum([R_b[j] == i for j in range(ROUNDS)])) == 2) for i in range(HOUSES)]
 
-
-
 phi = each_round_in_two_houses + each_round_has_five_people_per_house + every_couple_hosts_two_rounds_in_their_house
 
 solve(phi)
