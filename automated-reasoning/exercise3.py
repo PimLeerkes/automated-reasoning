@@ -1,4 +1,5 @@
 from z3 import *
+from pretty_printer import solve_and_print
 
 HOUSES, COUPLES, ROUNDS = 5, 5, 5
 PEOPLE = 10

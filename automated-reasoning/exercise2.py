@@ -131,8 +131,8 @@ def touch(c1, c2):
     ])
     ])
 
-D = 19
-# This part goes wrong due to rounding errors. We still find a solution for 19, but it's actually a solution for 18
+D = 18
+# This part goes wrong due to rounding errors. We still find a solution for 18, but it's actually a solution for 17
 
 def get_center(rect):
     return Point(tl(rect).x + rect[2], tl(rect).y + rect[3])
