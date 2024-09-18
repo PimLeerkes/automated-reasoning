@@ -1,7 +1,10 @@
 from z3 import *
 
+def flatten(xss):
+    return [x for xs in xss for x in xs]
+
 def solve_and_print(P, R_a, R_b, PR, all_vars=False, pretty=True, print_phi=False):
-    phi = P + R_a + R_b
+    phi = P + R_a + R_b + flatten(PR)
     s = Solver()
     print("Solving")
     s.check()
@@ -32,7 +35,7 @@ def solve_and_print(P, R_a, R_b, PR, all_vars=False, pretty=True, print_phi=Fals
             b = []
             unbound = []
             for p_no in range(10):
-                key = f"p_{p_no}_{r_no}"
+                key = PR[r_no][p_no]
                 house_of_p = results[key]
                 if house_of_p == 0:
                     a.append(p_no)
