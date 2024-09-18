@@ -54,7 +54,7 @@ all_mushrooms_in_at_least_one_bus = [Or([M[i][j] for i in range(3)]) for j in ra
 no_one_mushroom_in_two_busses = [
     And([
         Or([Not(M[i][j]), Not(M[k][j])]) 
-    for (i,k) in smaller_pairs(0,3)]) 
+    for (i,k) in smaller_pairs(0,3)])e
 for j in range(MUSHROOMS)]
 
 all_goats_in_at_least_one_bus = [Or([G[i][j] for i in range(BUSSES)]) for j in range(GOATS)]
