@@ -30,6 +30,7 @@ def solve_and_print(P, R_a, R_b, PR, all_vars=False, pretty=True, print_phi=Fals
 
             a = []
             b = []
+            unbound = []
             for p_no in range(10):
                 key = f"p_{p_no}_{r_no}"
                 house_of_p = results[key]
@@ -38,10 +39,11 @@ def solve_and_print(P, R_a, R_b, PR, all_vars=False, pretty=True, print_phi=Fals
                 elif house_of_p == 1:
                     b.append(p_no)
                 else:
-                    raise Exception("Sanity check failed.")
+                    unbound.append(p_no)
 
             print(f"A: {a}")
             print(f"B: {b}")
+            print(f"unbound: {unbound}")
 
             
     
