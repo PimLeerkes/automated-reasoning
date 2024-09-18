@@ -25,7 +25,7 @@ each_round_has_five_people_per_house = [And(Sum(PR[i]) == 5, And([Or(PR[i][j] ==
 
 every_couple_hosts_two_rounds_in_their_house = []
 
-phi = each_round_in_two_houses + each_round_has_five_people_per_house + [P[0] == 0]
+phi = each_round_in_two_houses + each_round_has_five_people_per_house
 
 solve(phi)
 
