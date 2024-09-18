@@ -6,7 +6,7 @@ PEOPLE = 10
 PEOPLE_PER_ROUND = 5
 
 
-#P = [Int(f"p_{i}") for i in range(PEOPLE)]
+P = [Int(f"p_{i}") for i in range(PEOPLE)]
 
 R_a = [Int(f"r_a_{i}") for i in range(ROUNDS)]
 R_b = [Int(f"r_b_{i}") for i in range(ROUNDS)]
@@ -31,3 +31,5 @@ every_couple_hosts_two_rounds_in_their_house = [And(Sum(Sum([R_a[j] == i for j i
 phi = each_round_in_two_houses + each_round_has_five_people_per_house + every_couple_hosts_two_rounds_in_their_house
 
 solve(phi)
+
+solve_and_print(P, R_a, R_b, PR, phi, all_vars=True, pretty=True)

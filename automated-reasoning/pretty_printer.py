@@ -3,13 +3,13 @@ from z3 import *
 def flatten(xss):
     return [x for xs in xss for x in xs]
 
-def solve_and_print(P, R_a, R_b, PR, all_vars=False, pretty=True, print_phi=False):
-    phi = P + R_a + R_b + flatten(PR)
+def solve_and_print(P, R_a, R_b, PR, phi, all_vars=False, pretty=True):
     s = Solver()
     print("Solving")
+    s.add(phi)
     s.check()
     m = s.model()
-    results = {var: m.evaluate(var) for var in phi}
+    results = {var: m.evaluate(var) for var in (P + R_a + R_b + flatten(PR))}
     if all_vars:
         print(results)
     if pretty:
