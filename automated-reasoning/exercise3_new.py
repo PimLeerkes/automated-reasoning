@@ -79,12 +79,62 @@ F_couple_present_at_own_party = [
 
 # No participant may be in the same house with another participant for all five rounds. 
 
-# Between the rounds, participants may move from one house to another.
+F_no_same_house_always = [
+    Not(And([
+        V_people_locations[p1_no][r_no] == V_people_locations[p2_no][r_no] for r_no in range(ROUNDS)
+    ]))
+    for p1_no in range(PPL) for p2_no in range(PPL) if p1_no != p2_no]
+#print(F_no_same_house_always[0:3])
+
+# (Between the rounds, participants may move from one house to another. ) We get it for free! :D
+
+# On top of these requirements, there are four desired properties:
+# (A) Every two people among the ten participants meet each other at least once.
+
+def number_of_meetings(p1_no, p2_no):
+    return Sum([V_people_locations[p1_no][r_no] == V_people_locations[p2_no][r_no] for r_no in range(ROUNDS)])
+
+F_A_meet_each_other_at_least_once = [
+    number_of_meetings(p1_no, p2_no) >= 1 for p1_no in range(PPL) for p2_no in range(PPL) if p1_no != p2_no
+]
+#print(F_A_meet_each_other_at_least_once[0:3])
+
+# (B) Every two people among the ten participants meet each other at most three times.
+
+F_B_meet_each_other_at_most_thrice = [
+    number_of_meetings(p1_no, p2_no) <= 3 for p1_no in range(PPL) for p2_no in range(PPL) if p1_no != p2_no
+]
+
+# (C) Couples never meet outside their own houses.
+# True iff they meet exactly twice, given that they host two parties at which both of them have to be present.
+F_C_couples_never_meet_outside_own_houses = [
+    number_of_meetings(p1_no, p2_no) == 2 for p1_no in range(PPL) for p2_no in range(PPL) if p1_no != p2_no
+]
+
+def num_times_p_in_cs_house(p_no, c_no):
+    """The number of times that p_no has been in c_no's house."""
+    locs_of_p = V_people_locations[p_no]
+    return z3_count(c_no, locs_of_p)
+
+
+# (D) No person can be a guest in the same house twice.
+F_D_no_guest_same_house_twice = [
+    Implies(V_people_couples[p_no] != c_no, num_times_p_in_cs_house(p_no, c_no) < 2)
+    for p_no in range(PPL) for c_no in range(COUPLES)
+]
+#print(F_D_no_guest_same_house_twice[0:3])
 
 # ONLY F HERE
 V_all_vars = flatten(V_people_locations) +\
 V_people_couples +\
 V_round_couples
+
+### Definitions of questions.
+F_ACD = F_A_meet_each_other_at_least_once + F_C_couples_never_meet_outside_own_houses + F_D_no_guest_same_house_twice
+F_AC = F_A_meet_each_other_at_least_once + F_C_couples_never_meet_outside_own_houses
+F_AD = F_A_meet_each_other_at_least_once + F_D_no_guest_same_house_twice
+F_BCD = F_B_meet_each_other_at_most_thrice + F_C_couples_never_meet_outside_own_houses + F_D_no_guest_same_house_twice
+###
 
 # ONLY V HERE
 phi = F_people_locations_bound +\
@@ -94,30 +144,67 @@ F_round_couples_bound +\
 F_each_round_two_houses +\
 F_five_people_in_each_house_every_round +\
 F_every_couple_two_rounds +\
-F_couple_present_at_own_party
+F_couple_present_at_own_party +\
+F_no_same_house_always +\
+F_AD # Change this per question
+
+
+# Results (N.B. 'model not available' means unsat):
+# A /\ C /\ D unsat | Correct
+# A /\ C            | Unsat
+# A /\ D            | Sat, see proof below:
+# B /\ C /\ D       | Unsat
+
+# Proof for A /\ D sat:
+# People and locations per round
+#       r0    r1    r2    r3    r4
+# --  ----  ----  ----  ----  ----
+# p0     2     4     4     1     3
+# p1     0     2     1     3     3
+# p2     2     2     4     1     0
+# p3     2     4     1     3     3
+# p4     0     2     1     1     3
+# p5     2     2     4     3     0
+# p6     0     4     4     1     3
+# p7     0     2     4     3     0
+# p8     2     4     1     1     0
+# p9     0     4     1     3     0
+# l1     2     4     1     3     0
+# l2     0     2     4     1     3
+
+# People belonging to couples
+#   p0    p1    p2    p3    p4    p5    p6    p7    p8    p9
+# ----  ----  ----  ----  ----  ----  ----  ----  ----  ----
+#    4     3     2     3     1     2     4     0     1     0
 
 s = Solver()
 s.add(phi)
+print("Solving")
 s.check()
 m = s.model()
 res = {var: m.evaluate(var) for var in V_all_vars}
 
 
 ###### printing
-print("Locations")
+print("People and locations per round")
 people_location_values = [[str(res[p]) for p in r] for r in V_people_locations_inverted]
+party_locations_a = [str(res[loc]) for loc in V_round_couples_a]
+party_locations_b = [str(res[loc]) for loc in V_round_couples_b]
+
+
+
+
+labels = [f"p{p}" for p in range(PPL)] + ["l1", "l2"]
+#people_location_values.insert(0, labels)
 people_location_values_inverted = invert_2d_list(people_location_values)
-print(tabulate(people_location_values, headers = [f"p{p}" for p in range(PPL)]))
-print("Number of parties hosted")
+people_location_values_inverted.append(party_locations_a)
+people_location_values_inverted.append(party_locations_b)
+l2 = invert_2d_list(people_location_values_inverted)
+l2.insert(0, labels)
+l3 = invert_2d_list(l2)
 
+print(tabulate(l3, headers = [f"r{r}" for r in range(ROUNDS)]))
 
-#solve(phi)
-
-# On top of these requirements, there are four desired properties:
-# (A) Every two people among the ten participants meet each other at least once.
-
-# (B) Every two people among the ten participants meet each other at most three times.
-
-# (C) Couples never meet outside their own houses.
-
-# (D) No person can be a guest in the same house twice.
+print("\nPeople belonging to couples")
+couples_list = invert_2d_list([str(res[v]) for v in V_people_couples])
+print(tabulate(couples_list, headers=[f"p{x}" for x in range(PPL)]))
