@@ -69,13 +69,16 @@ F7_every_couple_two_rounds = [
 # for which both hosts have to be present.
 
 F8_couple_present_at_own_party = [
-    Implies(And(V_round_couples[r_no] == c_no, V_people_couples[p_no] == c_no), 
+    And([Implies(And(V_round_couples_a[r_no] == c_no, V_people_couples[p_no] == c_no), 
+            V_people_locations[p_no][r_no] == c_no),
+        Implies(And(V_round_couples_b[r_no] == c_no, V_people_couples[p_no] == c_no), 
             V_people_locations[p_no][r_no] == c_no)
+    ])
     for r_no in range(ROUNDS) 
     for c_no in range(COUPLES)
     for p_no in range(PPL)
 ]
-#[print(clause) for clause in F_couple_present_at_own_party[:100]]
+#[print(clause) for clause in F8_couple_present_at_own_party[:10]]
 
 # No participant may be in the same house with another participant for all five rounds. 
 
@@ -104,12 +107,17 @@ F_A_meet_each_other_at_least_once = [
 F_B_meet_each_other_at_most_thrice = [
     number_of_meetings(p1_no, p2_no) <= 3 for p1_no in range(PPL) for p2_no in range(PPL) if p1_no != p2_no
 ]
+#print(F_B_meet_each_other_at_most_thrice[0:3])
 
 # (C) Couples never meet outside their own houses.
 # True iff they meet exactly twice, given that they host two parties at which both of them have to be present.
 F_C_couples_never_meet_outside_own_houses = [
-    number_of_meetings(p1_no, p2_no) == 2 for p1_no in range(PPL) for p2_no in range(PPL) if p1_no != p2_no
+    Implies(V_people_couples[p1_no] == V_people_couples[p2_no],
+            number_of_meetings(p1_no, p2_no) == 2)
+    
+    for p1_no in range(PPL) for p2_no in range(PPL) if p1_no != p2_no
 ]
+#print(F_C_couples_never_meet_outside_own_houses[0:3])
 
 def num_times_p_in_cs_house(p_no, c_no):
     """The number of times that p_no has been in c_no's house."""
@@ -124,7 +132,7 @@ F_D_no_guest_same_house_twice = [
 ]
 #print(F_D_no_guest_same_house_twice[0:3])
 
-# ONLY F HERE
+# ONLY V HERE
 V_all_vars = flatten(V_people_locations) +\
 V_people_couples +\
 V_round_couples
@@ -136,7 +144,7 @@ F_AD = F_A_meet_each_other_at_least_once + F_D_no_guest_same_house_twice
 F_BCD = F_B_meet_each_other_at_most_thrice + F_C_couples_never_meet_outside_own_houses + F_D_no_guest_same_house_twice
 ###
 
-# ONLY V HERE
+# ONLY F HERE
 phi = F1_people_locations_bound +\
 F2_people_couples_bound +\
 F3_couple_is_two_people +\
@@ -146,36 +154,9 @@ F6_five_people_in_each_house_every_round +\
 F7_every_couple_two_rounds +\
 F8_couple_present_at_own_party +\
 F9_no_same_house_always +\
-F_AD # Change this per question
+F_ACD # Change this per question
 
-
-# Results (N.B. 'model not available' means unsat):
-# A /\ C /\ D unsat | Correct
-# A /\ C            | Unsat
-# A /\ D            | Sat, see proof below:
-# B /\ C /\ D       | Unsat
-
-# Proof for A /\ D sat:
-# People and locations per round
-#       r0    r1    r2    r3    r4
-# --  ----  ----  ----  ----  ----
-# p0     2     4     4     1     3
-# p1     0     2     1     3     3
-# p2     2     2     4     1     0
-# p3     2     4     1     3     3
-# p4     0     2     1     1     3
-# p5     2     2     4     3     0
-# p6     0     4     4     1     3
-# p7     0     2     4     3     0
-# p8     2     4     1     1     0
-# p9     0     4     1     3     0
-# l1     2     4     1     3     0
-# l2     0     2     4     1     3
-
-# People belonging to couples
-#   p0    p1    p2    p3    p4    p5    p6    p7    p8    p9
-# ----  ----  ----  ----  ----  ----  ----  ----  ----  ----
-#    4     3     2     3     1     2     4     0     1     0
+# (N.B. 'model not available' means unsat)
 
 s = Solver()
 s.add(phi)
