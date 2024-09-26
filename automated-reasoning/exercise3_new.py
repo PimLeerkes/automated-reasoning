@@ -154,7 +154,7 @@ F6_five_people_in_each_house_every_round +\
 F7_every_couple_two_rounds +\
 F8_couple_present_at_own_party +\
 F9_no_same_house_always +\
-F_ACD # Change this per question
+F_AD # Change this per question
 
 # (N.B. 'model not available' means unsat)
 
