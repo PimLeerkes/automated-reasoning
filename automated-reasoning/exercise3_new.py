@@ -154,7 +154,7 @@ F6_five_people_in_each_house_every_round +\
 F7_every_couple_two_rounds +\
 F8_couple_present_at_own_party +\
 F9_no_same_house_always +\
-F_AD # Change this per question
+F_BCD # Change this per question
 
 # (N.B. 'model not available' means unsat)
 
@@ -184,8 +184,8 @@ l2 = invert_2d_list(people_location_values_inverted)
 l2.insert(0, labels)
 l3 = invert_2d_list(l2)
 
-print(tabulate(l3, headers = [f"r{r}" for r in range(ROUNDS)]))
+print(tabulate(l3, headers = [f"r{r}" for r in range(ROUNDS)], tablefmt="latex"))
 
 print("\nPeople belonging to couples")
 couples_list = invert_2d_list([str(res[v]) for v in V_people_couples])
-print(tabulate(couples_list, headers=[f"p{x}" for x in range(PPL)]))
+print(tabulate(couples_list, headers=[f"p{x}" for x in range(PPL)], tablefmt="latex"))

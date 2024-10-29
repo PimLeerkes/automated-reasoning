@@ -131,11 +131,11 @@ def touch(c1, c2):
     ])
     ])
 
-D = 18
+D = 17
 # This part goes wrong due to rounding errors. We still find a solution for 18, but it's actually a solution for 17
 
 def get_center(rect):
-    return Point(tl(rect).x + rect[2], tl(rect).y + rect[3])
+    return Point(tl(rect).x * 2+ rect[2], tl(rect).y * 2 + rect[3])
 
 connected_to_power = [
     Or([
@@ -150,10 +150,10 @@ p2 = power_components[1]
 
 
 power_component_distance = [Or([
-    get_center(p1).x >= get_center(p2).x + D,
-    get_center(p2).x >= get_center(p1).x + D,
-    get_center(p1).y >= get_center(p2).y + D,
-    get_center(p2).y >= get_center(p1).y + D,
+    get_center(p1).x >= get_center(p2).x + D*2,
+    get_center(p2).x >= get_center(p1).x + D*2,
+    get_center(p1).y >= get_center(p2).y + D*2,
+    get_center(p2).y >= get_center(p1).y + D*2,
 ])]
 
 print(power_component_distance)
