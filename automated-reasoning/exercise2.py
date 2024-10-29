@@ -33,16 +33,16 @@ POWER_COMPONENTS_TUPLES = [
 COMPONENTS_TUPLES = REGULAR_COMPONENTS_TUPLES + POWER_COMPONENTS_TUPLES
 
 
-regular_components = [[Int(f"cp_{i}_{s[0]}*{s[1]}_x"), 
-                       Int(f"cp_{i}_{s[0]}*{s[1]}_y"),
-                       Int(f"cp_{i}_{s[0]}*{s[1]}_w"),
-                       Int(f"cp_{i}_{s[0]}*{s[1]}_h"),
+regular_components = [[Real(f"cp_{i}_{s[0]}*{s[1]}_x"), 
+                       Real(f"cp_{i}_{s[0]}*{s[1]}_y"),
+                       Real(f"cp_{i}_{s[0]}*{s[1]}_w"),
+                       Real(f"cp_{i}_{s[0]}*{s[1]}_h"),
                        ] for (i,s) in enumerate(REGULAR_COMPONENTS_TUPLES)]
 
-power_components = [[Int(f"po_{i}_{s[0]}*{s[1]}_x"), 
-                       Int(f"po_{i}_{s[0]}*{s[1]}_y"),
-                       Int(f"po_{i}_{s[0]}*{s[1]}_w"),
-                       Int(f"po_{i}_{s[0]}*{s[1]}_h"),
+power_components = [[Real(f"po_{i}_{s[0]}*{s[1]}_x"), 
+                       Real(f"po_{i}_{s[0]}*{s[1]}_y"),
+                       Real(f"po_{i}_{s[0]}*{s[1]}_w"),
+                       Real(f"po_{i}_{s[0]}*{s[1]}_h"),
 ] for (i,s) in enumerate(POWER_COMPONENTS_TUPLES)]
 
 components = regular_components + power_components
@@ -79,7 +79,7 @@ def br(rect):
 all_components_in_bound = [
     And([
         tl(c).x >= 0,
-        tl(c). y >= 0,
+        tl(c).y >= 0,
         br(c).x <= WIDTH,
         br(c).y <= HEIGHT]) 
 for (c,(w,h)) in zip(components, COMPONENTS_TUPLES)]
@@ -131,11 +131,11 @@ def touch(c1, c2):
     ])
     ])
 
-D = 18
+D = 17.5
 # This part goes wrong due to rounding errors. We still find a solution for 18, but it's actually a solution for 17
 
 def get_center(rect):
-    return Point(tl(rect).x + rect[2], tl(rect).y + rect[3])
+    return Point(tl(rect).x + rect[2]/2, tl(rect).y + rect[3]/2)
 
 connected_to_power = [
     Or([
@@ -150,10 +150,10 @@ p2 = power_components[1]
 
 
 power_component_distance = [Or([
-    get_center(p1).x >= get_center(p2).x + D,
-    get_center(p2).x >= get_center(p1).x + D,
-    get_center(p1).y >= get_center(p2).y + D,
-    get_center(p2).y >= get_center(p1).y + D,
+    get_center(p1).x - get_center(p2).x >= D,
+    get_center(p2).x - get_center(p1).x >= D,
+    get_center(p1).y - get_center(p2).y >= D,
+    get_center(p2).y - get_center(p1).y >= D,
 ])]
 
 print(power_component_distance)
@@ -176,21 +176,16 @@ def plot_rects(comps: list, facecolor=None):
     ax.plot([0, WIDTH],[0, 0])
     colors = ["red", "green", "blue", "orange", "gray", "purple"]
     for n, rect in enumerate(comps):
-        x = m.evaluate(rect[0]).as_long()
-        y = m.evaluate(rect[1]).as_long()
-        w = m.evaluate(rect[2]).as_long()
-        h = m.evaluate(rect[3]).as_long()
+        x = m.evaluate(rect[0]).as_fraction()
+        y = m.evaluate(rect[1]).as_fraction()
+        w = m.evaluate(rect[2]).as_fraction()
+        h = m.evaluate(rect[3]).as_fraction()
         color = facecolor if facecolor is not None else colors[n % len(colors)]
         ax.add_patch(Rectangle((x, y), w, h, facecolor=color, edgecolor="white"))
 
 
 plot_rects(regular_components, "blue")
 plot_rects(power_components, "yellow")
-#create simple line plot
-
-
-#add rectangle to plot
-
 
 #display plot
 plt.show()
