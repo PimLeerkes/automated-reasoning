@@ -32,7 +32,6 @@ POWER_COMPONENTS_TUPLES = [
 
 COMPONENTS_TUPLES = REGULAR_COMPONENTS_TUPLES + POWER_COMPONENTS_TUPLES
 
-
 regular_components = [[Real(f"cp_{i}_{s[0]}*{s[1]}_x"), 
                        Real(f"cp_{i}_{s[0]}*{s[1]}_y"),
                        Real(f"cp_{i}_{s[0]}*{s[1]}_w"),
@@ -131,8 +130,7 @@ def touch(c1, c2):
     ])
     ])
 
-D = 17.5
-# This part goes wrong due to rounding errors. We still find a solution for 18, but it's actually a solution for 17
+D = 17
 
 def get_center(rect):
     return Point(tl(rect).x + rect[2]/2, tl(rect).y + rect[3]/2)
