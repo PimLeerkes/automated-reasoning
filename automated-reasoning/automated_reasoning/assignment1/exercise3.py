@@ -184,8 +184,8 @@ l2 = invert_2d_list(people_location_values_inverted)
 l2.insert(0, labels)
 l3 = invert_2d_list(l2)
 
-print(tabulate(l3, headers = [f"r{r}" for r in range(ROUNDS)]))
+print(tabulate(l3, headers = [f"r{r}" for r in range(ROUNDS)], tablefmt="latex"))
 
 print("\nPeople belonging to couples")
 couples_list = invert_2d_list([str(res[v]) for v in V_people_couples])
-print(tabulate(couples_list, headers=[f"p{x}" for x in range(PPL)]))
+print(tabulate(couples_list, headers=[f"p{x}" for x in range(PPL)], tablefmt="latex"))
