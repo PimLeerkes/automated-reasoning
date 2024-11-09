@@ -40,6 +40,14 @@ def get_list(guess):
   """return the list describing the full guess"""
   return guess[0]
 
+from functools import reduce
+def powerset(lst):
+  """returns the 'powerlist' of a list"""
+  return reduce(lambda result, x: result + [subset + [x] for subset in result],
+                  lst, [[]])
+
+
+
 # uncomment the following if you want to see the values of the main variables, and the output of the functions
 #print(N)
 #print(K)
@@ -52,8 +60,45 @@ def get_list(guess):
 
 # THIS IS WHERE YOUR CODE GOES
 
-# remove this, since it's just to give an example for the output
-solution = range(1,N+1)
+#we make the solution variables
+S = [Int(f"s_{i}") for i in range(N)]
+
+#we put a constraint on the value of S
+S_constraint = And([And(0<s,s<=K) for s in S])
+
+#for a we don't want duplicates in the solution
+no_duplicates = And([And([Implies(i != j, S[i] != S[j]) for i in range(len(S))]) for j in range(len(S))])
+
+
+#correct colors:
+def correct(guess: list[int], n: int):
+  return Sum([If(S[i] == get_list(guess)[i],1,0) for i in range(N)]) == n
+  #return Or([And(len(I) == n, And([S[i] == get_list(guess)[i] for i in I]))
+  #              for I in powerset([n for n in range(N)])])
+
+
+#partially correct colors:
+def partially_correct(guess: list[int], n: int):
+  return Sum([If(Or([And(k != i, S[k] == get_list(guess)[i]) for k in range(N)]), 1, 0) for i in range(N)]) == n
+  #return Or([And(len(I) == n, And([Or([And(k != i, S[k] == get_list(guess)[i]) for k in range(N)]) for i in I]))
+  #              for I in powerset([n for n in range(N)])])
+
+#all_guesses_correct = And([correct(guess, number_correct(guess)) for guess in guesses])
+#solve(And(no_duplicates,S_constraint,all_guesses_correct))
+
+#we combine all guesses together
+all_guesses = And([And(correct(guess, number_correct(guess)), partially_correct(guess,number_partial(guess))) for guess in guesses])
+
+
+#the resulting formulas for a and b
+a = [all_guesses, no_duplicates, S_constraint]
+b = [all_guesses, S_constraint]
+
+solver = Solver()
+solver.add(a)
+if solver.check() == sat:
+    model = solver.model()
+    solution = [model[s].as_long() for s in S]
 
 ########## print the solution ##########
 
