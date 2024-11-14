@@ -62,32 +62,56 @@ def print_solution(solution):
 
 ########## your code goes here! ##########
 
-print("********** delete this output; this is just to show the variables **********")
-# N is the number of students
-print("Number of students:", N)
-# P is the number of projects
-print("Number of projects:", P)
-# minimum group size is the minimum number of students that should be assigned to each project
-print("Minimum number of students per project group:", minimum_group_size)
-# maximum group size is the minimum number of students that should be assigned to each project
-print("Maximum number of students per project group:", maximum_group_size)
-# student_names is the list of students
-print("Students are called:", student_names)
-# project_names is the list of projects
-print("Projects are called:", project_names)
-# for student in student_names and proj in project_names, get_rank(student, proj) indicates the
-# ranking the given student assigns to the given project
-print("Rank for student", student_names[0], "with project", project_names[P-1], "is:",
-  get_rank(student_names[0], project_names[P-1]))
-# for student in 0..N-1 and proj in 0..P-1, get_rank_by_id(student, proj) indicates the ranking the
-# given student assigns to the corresponding project
-print("Rank for student 0 with project id", P-1, "is:", get_rank_by_id(0, P-1))
+def to_names(assignment: list[int]) -> list[str]:
+  pass
 
-# let's show a random output assignment
-print("Here's a random solution (which might not comply with the group size requirements):")
-randomsolution = {}
-for student in student_names:
-  randomsolution[student] = random.choice(project_names)
-print_solution(randomsolution)
+def get_goodness(assignment: list[int]) -> list[int]:
+  return [sum([int(get_rank_by_id(n, p) == r and assignment[n] == p)
+               for n in range(N) for p in range(P)]) 
+  for r in range(P)]
+
+def find_better_assignment(goodness_b):
+  V_ASSIGNMENT = [Int(f"A_{n}") for n in range(N)]
+  F_ASSIGNMENT_BOUND = [And(a_n >= 0, a_n < P) for a_n in V_ASSIGNMENT]
+  F_GROUP_SIZES = [Or(Sum([a_n == p for a_n in V_ASSIGNMENT]) == math.floor(N/P),
+                      Sum([a_n == p for a_n in V_ASSIGNMENT]) == math.ceil(N/P))
+                   for p in range(P)]
+  # F_BETTER = Or([
+  #   V_ASSIGNMENT[R] < goodness_b[R]
+  # for R in range(P)])
+  # print(F_BETTER)
+  
+  phi = F_ASSIGNMENT_BOUND + F_GROUP_SIZES
+  
+  V_ALL_VARS = V_ASSIGNMENT
+  
+  s = Solver()
+  s.add(phi)
+  s.check()
+  try:
+    m = s.model()
+    res = [int(str(m.evaluate(var))) for var in V_ALL_VARS]
+    return res
+  except:
+    return None
+
+def best_solution() -> list[int]:
+  w = [0 for n in range(N)] + [N]
+  b = find_better_assignment(w)
+  if b is None:
+    print("Failure")
+    return None
+  while True:
+    a = find_better_assignment(get_goodness(b))
+    if a is None:
+      return b
+    b = a
+    print("Found better assignment")
+    print(b)
+    print("Next iteration\n")
+
+solution = best_solution()
+if solution is not None:
+  print_solution(to_names(solution))
 print("****************************************************************************")
 
