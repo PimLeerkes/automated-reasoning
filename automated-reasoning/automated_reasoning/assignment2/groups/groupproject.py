@@ -6,7 +6,7 @@ import random
 
 ########## read input ##########
 
-inputfile = "ranking.txt"
+inputfile = "example.txt"
 if len(sys.argv) == 2:
     inputfile = sys.argv[1]
 
