@@ -30,7 +30,7 @@ def solve(grid: Grid) -> tuple[int, dict[Cell, str]]:
     #         print("Neighbor", direction, grid.neighbours(cell, direction))
     # step_bound is an int, policy is a dict from Cell to ACTIONS
     step_bound = 0
-    policy = {}
+    policy = None
     return step_bound, policy
 
 # Tip: to run all experiments, execute
@@ -52,7 +52,9 @@ def main():
             f"test_solution.png", policy=policy, count=nr_steps
         )
         print(solution_checker.run())
-    print(f"Found a solution with {nr_steps} steps.")
+        print(f"Found a solution with {nr_steps} steps.")
+    else:
+        print("Found no solution.")
 
 # If this file is running as a script, call the main method.
 if __name__ == "__main__":

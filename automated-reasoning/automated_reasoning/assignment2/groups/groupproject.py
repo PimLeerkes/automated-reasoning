@@ -63,12 +63,16 @@ def print_solution(solution):
 ########## your code goes here! ##########
 
 def to_names(assignment: list[int]) -> list[str]:
-  pass
+  return {student_names[n]: project_names[assignment[n]] for n in range(N)}
 
 def get_goodness(assignment: list[int]) -> list[int]:
-  return [sum([int(get_rank_by_id(n, p) == r and assignment[n] == p)
+  # for n in range(N):
+  #   for p in range(P):
+  #     r = get_rank_by_id(n, p)
+  #     print(f"{n} {p} {r}")
+  return [sum([int(get_rank_by_id(n, p) -1 == r and assignment[n] == p)
                for n in range(N) for p in range(P)]) 
-  for r in range(P)]
+  for r in range(0, P)]
 
 def find_better_assignment(goodness_b):
   V_ASSIGNMENT = [Int(f"A_{n}") for n in range(N)]
@@ -76,12 +80,19 @@ def find_better_assignment(goodness_b):
   F_GROUP_SIZES = [Or(Sum([a_n == p for a_n in V_ASSIGNMENT]) == math.floor(N/P),
                       Sum([a_n == p for a_n in V_ASSIGNMENT]) == math.ceil(N/P))
                    for p in range(P)]
-  # F_BETTER = Or([
-  #   V_ASSIGNMENT[R] < goodness_b[R]
-  # for R in range(P)])
-  # print(F_BETTER)
+  V_GOODNESS = [Int(f"N_A_{R}") for R in range(P)]
+  F_GOODNESS_1 = [V_GOODNESS[r] == Sum([
+    And(get_rank_by_id(n, p) -1 == r, V_ASSIGNMENT[n] == p)
+    for n in range(N) for p in range(P)]) for r in range(P)]
   
-  phi = F_ASSIGNMENT_BOUND + F_GROUP_SIZES
+  F_GOODNESS_BETTER = [Or([
+    And(V_GOODNESS[R] < goodness_b[R],
+        And([V_GOODNESS[r] == goodness_b[r] for r in range(R, P-1)])
+        )
+    for R in range(P)
+  ])]
+  
+  phi = F_ASSIGNMENT_BOUND + F_GROUP_SIZES + F_GOODNESS_1 + F_GOODNESS_BETTER
   
   V_ALL_VARS = V_ASSIGNMENT
   
@@ -90,24 +101,27 @@ def find_better_assignment(goodness_b):
   s.check()
   try:
     m = s.model()
-    res = [int(str(m.evaluate(var))) for var in V_ALL_VARS]
+    res = [int(str(m.evaluate(var))) for var in V_ASSIGNMENT]
     return res
   except:
     return None
 
 def best_solution() -> list[int]:
-  w = [0 for n in range(N)] + [N]
+  w = [0 for n in range(P-1)] + [N]
   b = find_better_assignment(w)
   if b is None:
     print("Failure")
     return None
+  print("Found first assignment with goodness")
+  print(get_goodness(b), "\n")
   while True:
     a = find_better_assignment(get_goodness(b))
     if a is None:
+      print("Done")
       return b
     b = a
-    print("Found better assignment")
-    print(b)
+    print("Found better assignment with goodness")
+    print(get_goodness(b))
     print("Next iteration\n")
 
 solution = best_solution()
