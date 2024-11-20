@@ -4,7 +4,7 @@ import math
 import sys
 from grid import Cell, Grid, SolutionChecker
 
-import z3
+from z3 import *
 
 #############
 # Task 3
@@ -17,7 +17,29 @@ def solve(grid: Grid) -> tuple[int, dict[Cell, str]]:
 
     :return: a solution as described above
     """
-    # TODO for students: solve the problem.
+    V_PLAN = {c:Int(f"p_{c}") for c in grid.colors}
+    F_PLAN_BOUND = [Or(V_PLAN[c] == 1, V_PLAN[c] == 2, V_PLAN[c] == 3, V_PLAN[c] == 4)
+                    for c in grid.colors if c != 1] + [V_PLAN[1] == 5]
+
+    print(F_PLAN_BOUND)
+    phi = F_PLAN_BOUND
+  
+    V_ALL_VARS = V_PLAN
+  
+    s = Solver()
+    s.add(phi)
+    s.check()
+    try:
+        m = s.model()
+        plan = {c: m.evaluate(V_PLAN[c]) for c in V_PLAN}
+        
+        return {}, 0
+    except:
+        step_bound = 0
+        policy = None
+        return step_bound, policy
+        return step_bound, policy
+    
 
     # Short demonstration how to use the grid class.
     # Loop through all cells:
@@ -29,9 +51,6 @@ def solve(grid: Grid) -> tuple[int, dict[Cell, str]]:
     #     for direction in ACTIONS:
     #         print("Neighbor", direction, grid.neighbours(cell, direction))
     # step_bound is an int, policy is a dict from Cell to ACTIONS
-    step_bound = 0
-    policy = None
-    return step_bound, policy
 
 # Tip: to run all experiments, execute
 # ls *.csv | xargs -I {} python robot.py {}
