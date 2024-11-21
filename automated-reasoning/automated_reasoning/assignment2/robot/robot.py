@@ -1,4 +1,4 @@
-ACTIONS = ["N", "S", "W", "E"]
+ACTIONS = ["N", "S", "W", "E", "STAND_STILL"]
 
 import math
 import sys
@@ -21,7 +21,6 @@ def solve(grid: Grid) -> tuple[int, dict[Cell, str]]:
     F_PLAN_BOUND = [Or(V_PLAN[c] == 1, V_PLAN[c] == 2, V_PLAN[c] == 3, V_PLAN[c] == 4)
                     for c in grid.colors if c != 1] + [V_PLAN[1] == 5]
 
-    print(F_PLAN_BOUND)
     phi = F_PLAN_BOUND
   
     V_ALL_VARS = V_PLAN
@@ -31,9 +30,9 @@ def solve(grid: Grid) -> tuple[int, dict[Cell, str]]:
     s.check()
     try:
         m = s.model()
-        plan = {c: m.evaluate(V_PLAN[c]) for c in V_PLAN}
-        
-        return {}, 0
+        plan = {c: int(str(m.evaluate(V_PLAN[c]))) for c in V_PLAN}
+        policy = {cell: ACTIONS[plan[grid.get_color(cell)]-1] for cell in grid.cells}
+        return 10, policy
     except:
         step_bound = 0
         policy = None
@@ -67,11 +66,14 @@ def main():
     nr_steps, policy = solve(grid)
     if policy is not None:
         solution_checker = SolutionChecker(grid, policy)
+        try:
+            print(solution_checker.run())
+            print(f"Found a solution with {nr_steps} steps.")
+        except:
+            print("Solution checker failed.")
         grid.plot(
             f"test_solution.png", policy=policy, count=nr_steps
         )
-        print(solution_checker.run())
-        print(f"Found a solution with {nr_steps} steps.")
     else:
         print("Found no solution.")
 

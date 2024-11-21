@@ -311,6 +311,7 @@ class Grid:
                     marker=dir_to_carret(policy.get(c)),
                     color="black",
                 )
+        plt.show()
         fig.savefig(path)
         plt.close(fig)
 
