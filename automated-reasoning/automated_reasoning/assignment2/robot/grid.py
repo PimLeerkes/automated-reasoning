@@ -102,6 +102,12 @@ class Grid:
                 for x in range(0, self.ydim)
             ]
         )
+    
+    def get_cell_at(self, x, y):
+        # print(self._cells)
+        res = self._cells[x * self.xdim + y]
+        # print(x, y, res)
+        return res
 
     @property
     def lower_bound_on_solution(self):
@@ -157,7 +163,7 @@ class Grid:
         For most types of underground, every cell has a unique neighbour in every direction,
         in which case the resulting list has one entry.
         """
-        assert dir in ["N", "S", "W", "E"]
+        assert dir in ["N", "S", "W", "E", "STAND_STILL"]
         if dir == "N":
             return [Cell(max(cell.x - 1, 0), cell.y)]
         elif dir == "S":
@@ -166,6 +172,8 @@ class Grid:
             return [Cell(cell.x, max(cell.y - 1, 0))]
         elif dir == "E":
             return [Cell(cell.x, min(cell.y + 1, self.maxy))]
+        elif dir == "STAND_STILL":
+            return [cell]
 
     def inv_neighbours(self, cell, dir):
         """
