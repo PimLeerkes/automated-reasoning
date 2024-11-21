@@ -2,9 +2,13 @@ ACTIONS = ["N", "S", "W", "E", "STAND_STILL"]
 
 import math
 import sys
+import itertools
 from grid import Cell, Grid, SolutionChecker, START_CELL_OBS, TARGET_CELL_OBS, LAVA_CELL_OBS, STICKY_CELL_OBS
 
 from z3 import *
+
+def flatten(l:list):
+    return list(itertools.chain(*l))
 
 #############
 # Task 3
@@ -20,7 +24,7 @@ def solve(grid: Grid) -> tuple[int, dict[Cell, str]]:
 
     best_t = 0
     best_policy = None
-    for T in reversed(range(3)):
+    for T in reversed(range(2,3)):
         V_PLAN = {c:Int(f"p_{c}") for c in grid.colors}
         F_PLAN_BOUND = [Or(V_PLAN[c] == 1, V_PLAN[c] == 2, V_PLAN[c] == 3, V_PLAN[c] == 4)
                         for c in grid.colors if c != 1] + [V_PLAN[1] == 5]
@@ -47,9 +51,9 @@ def solve(grid: Grid) -> tuple[int, dict[Cell, str]]:
         F_BASIC_MOVEMENT = [
             [
                 Implies(
-                    V_PLAN[c] == d
+                    And(V_PLAN[c] == d, match(s,t,c,x,y))
                 , # ===>
-                    And(V_X[s][t] == neighbors_id(x, y, d).x, V_Y[s][t] == neighbors_id(x, y, d).y)
+                    And(V_X[s][t] == neighbors_id(x, y, d).x)#, V_Y[s][t] == neighbors_id(x, y, d).y)
                 )
             ]
             for d in range(len(ACTIONS))
@@ -63,8 +67,10 @@ def solve(grid: Grid) -> tuple[int, dict[Cell, str]]:
         # print(F_BASIC_MOVEMENT[:10])
         # print(len(F_BASIC_MOVEMENT))
         # quit()
+        [print(m) for m in F_BASIC_MOVEMENT[0:50]]
+        print(len(F_BASIC_MOVEMENT))
 
-        phi = F_PLAN_BOUND
+        phi = F_PLAN_BOUND + flatten(F_BASIC_MOVEMENT)
     
         s = Solver()
         s.add(phi)
@@ -77,7 +83,6 @@ def solve(grid: Grid) -> tuple[int, dict[Cell, str]]:
             best_policy = policy
             print(f"Found better solution with T={T}")
         except:
-            print("Previous solution was best.")
             return best_t, best_policy
     print("Warning, out of the loop!")
     return best_t, best_policy
