@@ -47,7 +47,8 @@ def get_function_symbols(trs: list[tuple[Term, Term]]) -> set[str]:
     symbols = set()
     for rule in trs:
         for term in rule:
-            match term:
-                case FunctionApplication(symbol, _args):
-                    symbols.add(symbol)
+            for subterm in get_subterms(term):
+                match subterm:
+                    case FunctionApplication(symbol, _args):
+                        symbols.add(symbol)
     return symbols
