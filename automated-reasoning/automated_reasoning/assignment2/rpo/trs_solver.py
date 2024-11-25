@@ -59,6 +59,19 @@ def multiset_equality(x: list[any], y: list[any]) -> z3.ExprRef:
 # Task 4(b)
 #############
 
+from functools import reduce
+import itertools
+def powerset(lst):
+    """returns the 'powerlist' of a list"""
+    return reduce(lambda result, x: result + [subset + [x] for subset in result],lst, [[]])
+
+def all_functions(m,n):
+    """returns all functions X:[1...m] -> [1...m]"""
+    if n == 0:
+        return []
+    for values in itertools.product(range(1,n+1), repeat=m):
+        yield dict(zip(range(1,m+1), values))
+
 def multiset_ordering_greater(x: list[any], y: list[any]) -> z3.ExprRef:
     """
     Implement this!! That is task 4(b).
@@ -70,8 +83,35 @@ def multiset_ordering_greater(x: list[any], y: list[any]) -> z3.ExprRef:
     You need to define your own variables as well.
     We wrote a test below, which you can execute by running python trs_solver.py.
     """
+    m = len(y)
+    n = len(x)
 
-    
+    def properties_hold(strict,function):
+        """returns whether the required properties hold for x > y"""
+        #print(strict)
+        #print(function)
+        
+        def first_property(i):
+            return z3.Implies(function[i] in strict,var_relation(x[function[i]-1],y[i-1],Relation.GREATER))
+
+        def second_property(i):
+            return z3.Implies(function[i] not in strict,var_relation(x[function[i]-1],y[i-1],Relation.EQUAL))
+
+        def third_property(i):
+            return z3.Implies(z3.Or([var_relation(function[i],function[j],Relation.EQUAL) for j in range(1,m+1) if j != i]),function[i] in strict)
+
+        return z3.And([z3.And(first_property(i), second_property(i), third_property(i)) for i in range(1,m+1)])
+
+    #very slow. blows up exponentialy.
+    constraints = []
+    for strict in powerset(range(1, n + 1)):
+        if strict != []:
+            for function in all_functions(m, n):
+                constraints.append(properties_hold(strict, function))
+            
+    print(len(constraints))
+
+    return z3.Or(constraints)
 
 
 #############
@@ -101,6 +141,7 @@ def defining_formula_equal_fun(left: Term, right: Term) -> z3.ExprRef:
 
 def defining_formula_equal(left: Term, right: Term) -> z3.ExprRef:
     """Implement this as a part of (c)."""
+    print("hoi")
 
 def defining_formula_geq(left: Term, right: Term) -> z3.ExprRef:
     """Implement this as a part of (c)."""
