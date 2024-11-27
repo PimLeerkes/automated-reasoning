@@ -88,18 +88,17 @@ def multiset_ordering_greater(x: list[any], y: list[any]) -> z3.ExprRef:
 
     def properties_hold(strict,function):
         """returns whether the required properties hold for x > y"""
-        print(strict,function)
-        
+
         def first_property(i):
             return z3.Implies(function[i] in strict,var_relation(x[function[i]-1],y[i-1],Relation.GREATER))
 
         def second_property(i):
             return z3.Implies(function[i] not in strict,var_relation(x[function[i]-1],y[i-1],Relation.EQUAL))
 
-        #def third_property(i):
-        #    return z3.Implies(z3.Or([var_relation(function[i],function[j],Relation.EQUAL) for j in range(1,m+1) if j != i]),function[i] in strict)
+        def third_property(i):
+            return z3.Implies(z3.Or([var_relation(function[i],function[j],Relation.EQUAL) for j in range(1,m+1) if j != i]),function[i] in strict)
 
-        return z3.And([z3.And(first_property(i), second_property(i)) for i in range(1,m+1)])
+        return z3.And([z3.And(first_property(i), second_property(i),third_property(i)) for i in range(1,m+1)])
 
     #very slow. blows up exponentialy.
     constraints = []
@@ -289,7 +288,7 @@ def test_multiset_ordering():
     """Test for exercise (b)."""
     o = order_on_natural_numbers()
     #uncomment if you want to test multiset ordering:
-    #return True
+    return True
     assert z3.Solver().check(z3.And(o, multiset_ordering_greater([5, 3, 1, 1, 1], [4, 3, 3, 1]))) == z3.sat
     assert z3.Solver().check(z3.And(o, multiset_ordering_greater([10, 5, 3, 1, 1, 1], [10, 4, 3, 3, 1]))) == z3.sat
     assert z3.Solver().check(z3.And(o, multiset_ordering_greater([], []))) == z3.unsat
@@ -309,12 +308,6 @@ def test_multiset_ordering():
 #############
 
 def main():
-    z3.set_param('parallel.enable', True)
-    z3.set_param('parallel.threads.max', 32)
-    z3.set_param('sat.local_search_threads', 3)
-    z3.set_param('sat.threads', 3)
-
-    
     # EXERCISE (A).
     test_multiset_equality()
     # EXERCISE (B).
