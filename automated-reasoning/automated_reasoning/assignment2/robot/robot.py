@@ -7,6 +7,29 @@ from grid import Cell, Grid, SolutionChecker, START_CELL_OBS, TARGET_CELL_OBS, L
 
 from z3 import *
 
+LOWER_BOUNDS = {
+    "grid_2024-A-0.csv" : 13,
+    "grid_2024-A-11.csv" : 0, 
+    "grid_2024-A-13.csv" : 0 ,
+    "grid_2024-A-15.csv"  : 0,
+    "grid_2024-A-17.csv"  : 0,
+    "grid_2024-A-19.csv"  : 0,
+    "grid_2024-A-2.csv"  : 0,
+    "grid_2024-A-4.csv"  : 0,
+    "grid_2024-A-6.csv" : 0,
+    "grid_2024-A-8.csv": 0,
+    "grid_2024-A-10.csv": 22,
+    "grid_2024-A-12.csv"  : 0,
+    "grid_2024-A-14.csv"  : 0,
+    "grid_2024-A-16.csv"  : 0,
+    "grid_2024-A-18.csv"  : 0,
+    "grid_2024-A-1.csv": 0,
+    "grid_2024-A-3.csv": 0,
+    "grid_2024-A-5.csv" : 0,
+    "grid_2024-A-7.csv" : 0,
+    "grid_2024-A-9.csv": 0
+}
+
 def flatten(l:list):
     return list(itertools.chain(*l))
 
@@ -14,14 +37,15 @@ def flatten(l:list):
 # Task 3
 #############
 
-def solve(grid: Grid) -> tuple[int, dict[Cell, str]]:
+def solve(grid: Grid, lower_bound) -> tuple[int, dict[Cell, str]]:
     """
     A solution is a tuple (nr_steps, policy) where the nr_steps is the number of steps actually necessary,
     and a policy, which is a dictionary from grid cells to directions. Returning a policy is optional, but helpful for debugging.
 
     :return: a solution as described above
     """
-    for T in range(grid.lower_bound_on_solution,9999999):
+    has_failed = False
+    for T in range(lower_bound,9999999):
     #for T in range(13,9999999):
         V_PLAN = {c:Int(f"p_{c}") for c in grid.colors}
         F_PLAN_BOUND = [Or(V_PLAN[c] == 1, V_PLAN[c] == 2, V_PLAN[c] == 3, V_PLAN[c] == 4)
@@ -101,11 +125,11 @@ def solve(grid: Grid) -> tuple[int, dict[Cell, str]]:
             Implies(match(s,t,STICKY_CELL_OBS,x,y),
                 Implies(Or(V_X[s][t-1] != V_X[s][t], V_Y[s][t-1] != V_Y[s][t]),
                     And([And(V_X[s][t] == V_X[s][tt], V_Y[s][t] == V_Y[s][tt])
-                        for tt in range(t+1, min(t+6,T))
+                        for tt in range(t+1, min(t+7,T))
                     ] + [Implies(V_PLAN[STICKY_CELL_OBS] == d,
-                        And(V_X[s][t+6] == neighbors_id(x,y,d).x, V_Y[s][t+6] == neighbors_id(x,y,d).y,
-                            Or(V_X[s][t+6] != V_X[s][t], V_Y[s][t+6] != V_Y[s][t])))
-                        for d in range(len(ACTIONS)) if t+6 < T])
+                        And(V_X[s][t+7] == neighbors_id(x,y,d).x, V_Y[s][t+7] == neighbors_id(x,y,d).y,
+                            Or(V_X[s][t+7] != V_X[s][t], V_Y[s][t+7] != V_Y[s][t])))
+                        for d in range(len(ACTIONS)) if t+7 < T])
                 ))
             for y in range(grid.ydim)
             for x in range(grid.xdim)
@@ -153,11 +177,14 @@ def solve(grid: Grid) -> tuple[int, dict[Cell, str]]:
                         d = plan[get_color_id(x,y)]
                         print("t:", t, f"({x},{y}) color: ", get_color_id(x,y), "plan:", action_plan[get_color_id(x,y)], "planned neighbor:", neighbors_id(x,y,d))
 
-            print(f"Success in {T}")
-            return T, policy
+            #print(f"Success in {T-1}")
+            if not has_failed:
+                print(f"WARNING: This might not be the optimal solution for this map!")
+            return T-1, policy
         
         else:
-            print(f"Failed with {T} steps, next iteration.")
+            print(f"Failed with {T-1} steps, next iteration.")
+            has_failed = True
     print("Warning, out of the loop!")
 
     # Short demonstration how to use the grid class.
@@ -183,15 +210,19 @@ def main():
     print(f"...The grid has dimensions {grid.xdim}x{grid.ydim}")
     print(f"...A trivial lower bound on the solution is {grid.lower_bound_on_solution}")
     print("Computing optimal number of steps!")
-    nr_steps, policy = solve(grid)
+    lb = max(LOWER_BOUNDS[sys.argv[1][5:]]-1, grid.lower_bound_on_solution)
+    print("Lower bound:", lb, f"steps (which means T={lb})")
+    nr_steps, policy = solve(grid, lb+1)
     if policy is not None:
         solution_checker = SolutionChecker(grid, policy)
         try:
             sol_steps = solution_checker.run()
             if sol_steps == nr_steps:
-                print(f"Solution checker verified a solution with {nr_steps} steps.")
+                print(f"SUCCES! Solution checker verified a solution with {nr_steps} steps.")
+                with open("solutions.txt", "a") as f:
+                    f.write(f"{sys.argv[1]} {nr_steps}")
             else:
-                print(f"Mismatch! The solution checker found {sol_steps} but find_solution gives {nr_steps}.")
+                print(f"FAIL! The solution checker found {sol_steps} but solve gives {nr_steps}.")
         except:
             print("Solution checker failed.")
         grid.plot(
