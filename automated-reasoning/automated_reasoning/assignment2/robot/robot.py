@@ -103,7 +103,8 @@ def solve(grid: Grid) -> tuple[int, dict[Cell, str]]:
                     And([And(V_X[s][t] == V_X[s][tt], V_Y[s][t] == V_Y[s][tt])
                         for tt in range(t+1, min(t+6,T))
                     ] + [Implies(V_PLAN[STICKY_CELL_OBS] == d,
-                        And(V_X[s][t+6] == neighbors_id(x,y,d).x, V_Y[s][t+6] == neighbors_id(x,y,d).y))
+                        And(V_X[s][t+6] == neighbors_id(x,y,d).x, V_Y[s][t+6] == neighbors_id(x,y,d).y,
+                            Or(V_X[s][t+6] != V_X[s][t], V_Y[s][t+6] != V_Y[s][t])))
                         for d in range(len(ACTIONS)) if t+6 < T])
                 ))
             for y in range(grid.ydim)
@@ -140,7 +141,7 @@ def solve(grid: Grid) -> tuple[int, dict[Cell, str]]:
             action_plan = {c: ACTIONS[p-1] for c,p in plan.items()}
             policy = {cell: action_plan[grid.get_color(cell)] for cell in grid.cells}
 
-            DEBUG = True
+            DEBUG = False
             if DEBUG:
                 print(action_plan)
                 print("T:", T)
@@ -149,7 +150,8 @@ def solve(grid: Grid) -> tuple[int, dict[Cell, str]]:
                     for t in range(T):
                         x = int(str(m.evaluate(V_X[s][t])))
                         y = int(str(m.evaluate(V_Y[s][t])))
-                        print("t:", t, f"({x},{y}) color: ", get_color_id(x,y), "plan:", action_plan[get_color_id(x,y)])
+                        d = plan[get_color_id(x,y)]
+                        print("t:", t, f"({x},{y}) color: ", get_color_id(x,y), "plan:", action_plan[get_color_id(x,y)], "planned neighbor:", neighbors_id(x,y,d))
 
             print(f"Success in {T}")
             return T, policy
@@ -185,12 +187,15 @@ def main():
     if policy is not None:
         solution_checker = SolutionChecker(grid, policy)
         try:
-            print(solution_checker.run())
-            print(f"Solution checker verified a solution with {nr_steps} steps.")
+            sol_steps = solution_checker.run()
+            if sol_steps == nr_steps:
+                print(f"Solution checker verified a solution with {nr_steps} steps.")
+            else:
+                print(f"Mismatch! The solution checker found {sol_steps} but find_solution gives {nr_steps}.")
         except:
             print("Solution checker failed.")
         grid.plot(
-            f"test_solution.png", policy=policy, count=nr_steps
+            sys.argv[1] + ".png", policy=policy, count=nr_steps
         )
     else:
         print("Found no solution.")
