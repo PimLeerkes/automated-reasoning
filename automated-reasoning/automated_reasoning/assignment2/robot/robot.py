@@ -195,7 +195,7 @@ def main():
         except:
             print("Solution checker failed.")
         grid.plot(
-            sys.argv[1] + ".png", policy=policy, count=nr_steps
+            sys.argv[1] + "SOLUTION.png", policy=policy, count=nr_steps
         )
     else:
         print("Found no solution.")
