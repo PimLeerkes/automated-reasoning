@@ -2,7 +2,8 @@ from z3 import *
 
 import sys 
 import string
-import random
+import math
+import copy
 
 ########## read input ##########
 
@@ -74,7 +75,7 @@ def get_goodness(assignment: list[int]) -> list[int]:
                for n in range(N) for p in range(P)]) 
   for r in range(0, P)]
 
-def find_better_assignment(goodness_b):
+def find_better_assignment(lower_bound_attempt):
   V_ASSIGNMENT = [Int(f"A_{n}") for n in range(N)]
   F_ASSIGNMENT_BOUND = [And(a_n >= 0, a_n < P) for a_n in V_ASSIGNMENT]
   F_GROUP_SIZES = [Or(Sum([a_n == p for a_n in V_ASSIGNMENT]) == math.floor(N/P),
@@ -85,14 +86,22 @@ def find_better_assignment(goodness_b):
     And(get_rank_by_id(n, p) -1 == r, V_ASSIGNMENT[n] == p)
     for n in range(N) for p in range(P)]) for r in range(P)]
   
-  F_GOODNESS_BETTER = [Or([
-    And(V_GOODNESS[R] < goodness_b[R],
-        And([V_GOODNESS[r] == goodness_b[r] for r in range(R, P-1)])
-        )
-    for R in range(P)
-  ])]
+  F_LOWER_BOUND_ATTEMPT = [V_GOODNESS[r] <= v for r,v in lower_bound_attempt.items()]
+  # print(lower_bound_attempt)
+  # print(F_LOWER_BOUND_ATTEMPT)
+  # if try_rank:
+  #   F_FIND_BETTER = [V_]
+  #   [V_GOODNESS[r] == 0 for r in range(zero_index, P)]
+  # else:
+  #   F_FIND_BETTER = [Or([
+  #   And(V_GOODNESS[R] < goodness_b[R],
+  #       And([V_GOODNESS[r] == goodness_b[r] for r in range(R+1, P)])
+  #       )
+  #   for R in range(P)
+  # ])]
   
-  phi = F_ASSIGNMENT_BOUND + F_GROUP_SIZES + F_GOODNESS_1 + F_GOODNESS_BETTER
+  
+  phi = F_ASSIGNMENT_BOUND + F_GROUP_SIZES + F_GOODNESS_1 + F_LOWER_BOUND_ATTEMPT
   
   V_ALL_VARS = V_ASSIGNMENT
   
@@ -105,24 +114,49 @@ def find_better_assignment(goodness_b):
     return res
   except:
     return None
+  
+def optimize_non_zero_ranks(b, lower_bound_knowledge, R) -> list[int]:
+  lower_bound_attempt = copy.deepcopy(lower_bound_knowledge)
+  print("Optimizing non-zero ranks...")
+  for rank in reversed(range(R+1)):
+    if rank == 0:
+      return b
+    print(f"Trying to find an optimization on rank {rank}...")
+    lower_bound_attempt = lower_bound_knowledge
+    while True:
+      lower_bound_attempt[rank] = get_goodness(b)[rank] - 1
+      a = find_better_assignment(lower_bound_attempt)
+      #print("trying ############################                                 ", lower_bound_attempt)
+
+      if a is None:
+        return b
+      else:
+        print(f"Found non-zero optimization on rank {rank}...")
+        print(get_goodness(a), "\n")
+        b = a
+        lower_bound_knowledge = copy.deepcopy(lower_bound_attempt)
 
 def best_solution() -> list[int]:
-  w = [0 for n in range(P-1)] + [N]
-  b = find_better_assignment(w)
+  lower_bound_knowledge = {}
+  lower_bound_attempt = {}
+  find_zero_ranks = True
+  b = find_better_assignment(lower_bound_attempt)
   if b is None:
     print("Failure")
     return None
   print("Found first assignment with goodness")
   print(get_goodness(b), "\n")
-  while True:
-    a = find_better_assignment(get_goodness(b))
+
+  for rank in reversed(range(P)):
+    lower_bound_attempt[rank] = 0
+    a = find_better_assignment(lower_bound_attempt)
     if a is None:
-      print("Done")
-      return b
-    b = a
-    print("Found better assignment with goodness")
-    print(get_goodness(b))
-    print("Next iteration\n")
+      return optimize_non_zero_ranks(b, lower_bound_knowledge, rank)
+    else:
+      print(f"Found a better assignment with a new zero rank {rank}...")
+      print(get_goodness(a), "\n")
+      b = a
+      lower_bound_knowledge = copy.deepcopy(lower_bound_attempt)
 
 solution = best_solution()
 if solution is not None:
