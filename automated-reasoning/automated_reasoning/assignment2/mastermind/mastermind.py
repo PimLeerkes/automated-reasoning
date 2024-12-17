@@ -67,7 +67,7 @@ S = [Int(f"s_{i}") for i in range(N)]
 S_constraint = And([And(0<s,s<=K) for s in S])
 
 #for a we don't want duplicates in the solution
-no_duplicates = And([And([Implies(i != j, S[i] != S[j]) for i in range(len(S))]) for j in range(len(S))])
+no_duplicates = And([And([Implies(i != j, S[i] != S[j]) for i in range(N)]) for j in range(len(S))])
 
 #correct colors (same for a and b):
 def correct(guess: list[int], n: int):
@@ -89,13 +89,14 @@ def count_in_list(value, lst):
 
 #partially correct colors b:
 def partially_correct_b(guess, n):
-  #for part b we need a different sum:
   m = Sum([If(wrong_place_correct_color_b(guess, i), 1, 0) for i in range(N)])
 
+  #for part b we need a different sum:
   max = n
   for i in set(get_list(guess)):
-      count = count_in_list(i, get_list(guess))
-      max += If(count > 1, count - 1, 0)
+      count_in_guess = count_in_list(i, get_list(guess))
+      count_in_solution = count_in_list(i, S)
+      max += If(count_in_guess > count_in_solution, count_in_guess - count_in_solution, 0)
 
   return And(m >= n, m <= max)
 
