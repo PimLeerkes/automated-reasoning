@@ -7,28 +7,28 @@ from grid import Cell, Grid, SolutionChecker, START_CELL_OBS, TARGET_CELL_OBS, L
 
 from z3 import *
 
-LOWER_BOUNDS = {
-    "grid_2024-A-0.csv" : 13,
-    "grid_2024-A-11.csv" : 0, 
-    "grid_2024-A-13.csv" : 0 ,
-    "grid_2024-A-15.csv"  : 0,
-    "grid_2024-A-17.csv"  : 0,
-    "grid_2024-A-19.csv"  : 0,
-    "grid_2024-A-2.csv"  : 0,
-    "grid_2024-A-4.csv"  : 0,
-    "grid_2024-A-6.csv" : 0,
-    "grid_2024-A-8.csv": 0,
-    "grid_2024-A-10.csv": 22,
-    "grid_2024-A-12.csv"  : 0,
-    "grid_2024-A-14.csv"  : 0,
-    "grid_2024-A-16.csv"  : 0,
-    "grid_2024-A-18.csv"  : 0,
-    "grid_2024-A-1.csv": 0,
-    "grid_2024-A-3.csv": 0,
-    "grid_2024-A-5.csv" : 0,
-    "grid_2024-A-7.csv" : 0,
-    "grid_2024-A-9.csv": 0
-}
+# LOWER_BOUNDS = {
+#     "grid_2024-A-0.csv" : 13,
+#     "grid_2024-A-11.csv" : 0, 
+#     "grid_2024-A-13.csv" : 0 ,
+#     "grid_2024-A-15.csv"  : 0,
+#     "grid_2024-A-17.csv"  : 0,
+#     "grid_2024-A-19.csv"  : 0,
+#     "grid_2024-A-2.csv"  : 0,
+#     "grid_2024-A-4.csv"  : 0,
+#     "grid_2024-A-6.csv" : 0,
+#     "grid_2024-A-8.csv": 0,
+#     "grid_2024-A-10.csv": 22,
+#     "grid_2024-A-12.csv"  : 0,
+#     "grid_2024-A-14.csv"  : 0,
+#     "grid_2024-A-16.csv"  : 0,
+#     "grid_2024-A-18.csv"  : 0,
+#     "grid_2024-A-1.csv": 0,
+#     "grid_2024-A-3.csv": 0,
+#     "grid_2024-A-5.csv" : 0,
+#     "grid_2024-A-7.csv" : 0,
+#     "grid_2024-A-9.csv": 0
+# }
 
 def flatten(l:list):
     return list(itertools.chain(*l))
@@ -210,8 +210,8 @@ def main():
     print(f"...The grid has dimensions {grid.xdim}x{grid.ydim}")
     print(f"...A trivial lower bound on the solution is {grid.lower_bound_on_solution}")
     print("Computing optimal number of steps!")
-    lb = max(LOWER_BOUNDS[sys.argv[1][5:]]-1, grid.lower_bound_on_solution)
-    print("Lower bound:", lb, f"steps (which means T={lb})")
+    lb = grid.lower_bound_on_solution
+    print("Lower bound:", lb, f"steps.")
     nr_steps, policy = solve(grid, lb+1)
     if policy is not None:
         solution_checker = SolutionChecker(grid, policy)
