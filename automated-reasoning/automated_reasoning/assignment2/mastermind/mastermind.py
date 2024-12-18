@@ -40,14 +40,6 @@ def get_list(guess):
   """return the list describing the full guess"""
   return guess[0]
 
-from functools import reduce
-def powerset(lst):
-  """returns the 'powerlist' of a list"""
-  return reduce(lambda result, x: result + [subset + [x] for subset in result],
-                  lst, [[]])
-
-
-
 # uncomment the following if you want to see the values of the main variables, and the output of the functions
 #print(N)
 #print(K)
@@ -73,38 +65,34 @@ no_duplicates = And([And([Implies(i != j, S[i] != S[j]) for i in range(N)]) for 
 def correct(guess: list[int], n: int):
   return Sum([If(S[i] == get_list(guess)[i], 1, 0) for i in range(N)]) == n
 
-def wrong_place_correct_color_b(guess, i):
-  return And(S[i] != get_list(guess)[i], Or([And(S[j] == get_list(guess)[i], get_list(guess)[i] != get_list(guess)[j]) for j in range(N)]))
-    
+
 def wrong_place_correct_color_a(guess, i):
   return And(S[i] != get_list(guess)[i], Or([S[j] == get_list(guess)[i] for j in range(N)]))
-    
+
+
 #partially correct colors a:
 def partially_correct_a(guess, n):
   return Sum([If(wrong_place_correct_color_a(guess, i), 1, 0) for i in range(N)]) == n
+
 
 #helper function for part b
 def count_in_list(value, lst):
     return Sum([If(x == value, 1, 0) for x in lst])
 
-#partially correct colors b:
+def wrong_place_correct_color_b(guess, i):
+  n_solution = Sum([If(And(S[k] == get_list(guess)[i], S[k] != get_list(guess)[k]),1,0) for k in range(N)])
+  n_guess_lower_i = Sum([If(And(get_list(guess)[i] == get_list(guess)[j],S[j] != get_list(guess)[j]),1,0) for j in range(i)])
+
+  return And(S[i] != get_list(guess)[i], n_solution > n_guess_lower_i, Or([And(S[j] == get_list(guess)[i], get_list(guess)[i] != get_list(guess)[j]) for j in range(N)]))
+
+
+#partially correct colors a:
 def partially_correct_b(guess, n):
-  m = Sum([If(wrong_place_correct_color_b(guess, i), 1, 0) for i in range(N)])
-
-  #for part b we need a different sum:
-  max = n
-  for i in set(get_list(guess)):
-      count_in_guess = count_in_list(i, get_list(guess))
-      count_in_solution = count_in_list(i, S)
-      max += If(count_in_guess > count_in_solution, count_in_guess - count_in_solution, 0)
-
-  return And(m >= n, m <= max)
-
+  return Sum([If(wrong_place_correct_color_b(guess, i), 1, 0) for i in range(N)]) == n
 
 #we combine all guesses together
 all_guesses_a = And([And(correct(guess, number_correct(guess)), partially_correct_a(guess,number_partial(guess))) for guess in guesses])
 all_guesses_b = And([And(correct(guess, number_correct(guess)), partially_correct_b(guess,number_partial(guess))) for guess in guesses])
-
 
 #the resulting formulas for a and b
 a = [all_guesses_a, no_duplicates, S_constraint]
