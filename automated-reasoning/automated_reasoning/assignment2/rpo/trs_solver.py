@@ -59,55 +59,52 @@ def multiset_equality(x: list[any], y: list[any]) -> z3.ExprRef:
 # Task 4(b)
 #############
 
-from functools import reduce
-import itertools
-def powerset(lst):
-    """returns the 'powerlist' of a list"""
-    return reduce(lambda result, x: result + [subset + [x] for subset in result],lst, [[]])
-
-def all_functions(m,n):
-    """returns all functions X:[1...m] -> [1...m]"""
-    if n == 0:
-        return []
-    for values in itertools.product(range(1,n+1), repeat=m):
-        yield dict(zip(range(1,m+1), values))
-
 def multiset_ordering_greater(x: list[any], y: list[any]) -> z3.ExprRef:
     """
     Implement this!! That is task 4(b).
     Return: a z3 formula that expresses x > y.
     Use the following SMT variables:
     Use these variables over elements of multisets:
-    - var_relation(u, v, Relation.GREATER):  boolean variable that expresses x > y
+    - var_relation(u, v, Relation.GREATER):  boolean variable 
+    that expresses x > y
     - var_relation(u, v, Relation.EQUAL): boolean variable that expresses x == y
     You need to define your own variables as well.
     We wrote a test below, which you can execute by running python trs_solver.py.
     """
-    m = len(y)
+
     n = len(x)
+    m = len(y)
 
-    def properties_hold(strict,function):
-        """returns whether the required properties hold for x > y"""
+    f = [z3.Int(f"f_{i}") for i in range(1,m+1)]
 
-        def first_property(i):
-            return z3.Implies(function[i] in strict,var_relation(x[function[i]-1],y[i-1],Relation.GREATER))
+    f_codomain = z3.And([z3.And(1<=f[i],f[i] <= n) for i in range(m)])
 
-        def second_property(i):
-            return z3.Implies(function[i] not in strict,var_relation(x[function[i]-1],y[i-1],Relation.EQUAL))
+    strict = [z3.Bool(f"strict_{i}") for i in range(1,n+1)]
+    strict_not_empty = z3.Or([strict[i] for i in range(n)])
 
-        def third_property(i):
-            return z3.Implies(z3.Or([var_relation(function[i],function[j],Relation.EQUAL) for j in range(1,m+1) if j != i]),function[i] in strict)
+    #we define the greater and equal relations here (otherwise we have a problem with getting x[f[i-1]])
+    def greater(fi,i):
+        return z3.Or([z3.And(var_relation(x[k-1],y[i-1],Relation.GREATER), k == fi) for k in range(1,n+1)])
 
-        return z3.And([z3.And(first_property(i), second_property(i),third_property(i)) for i in range(1,m+1)])
+    def equal(fi,i):
+        return z3.Or([z3.And(var_relation(x[k-1],y[i-1],Relation.EQUAL), k == fi) for k in range(1,n+1)])
 
-    #very slow. blows up exponentialy.
-    constraints = []
-    for strict in powerset(range(1, n + 1)):
-        if strict != []:
-            for function in all_functions(m, n):
-                constraints.append((strict,function))
+    #check if fi is element of sctrict
+    def included(fi):
+        return z3.Or([z3.And(strict[k-1],fi == k) for k in range(1, n+1)])
 
-    return z3.Or([properties_hold(strict,function) for (strict,function) in constraints])
+    #the three different properties can be checked for each i:
+    def first_property(i):
+        return z3.Implies(included(f[i-1]), greater(f[i-1],i))#z3.Select(x_array, f[i-1]) > z3.Select(y_array, i))
+
+    def second_property(i):
+        return z3.Implies(z3.Not(included(f[i-1])),equal(f[i-1],i))#z3.Select(x_array, f[i-1]) == z3.Select(y_array, i))
+
+    def third_property(i):
+        return z3.Implies(z3.Or([f[i-1]==f[j-1] for j in range(1,m+1) if j != i]),z3.Or(included(f[i-1])))
+
+    return z3.And(z3.And([z3.And(first_property(i), second_property(i),third_property(i)) for i in range(1,m+1)]), f_codomain, strict_not_empty)
+
 
 
 #############
@@ -274,7 +271,7 @@ def order_on_natural_numbers() -> z3.ExprRef:
 def test_multiset_equality():
     """Test for exercise (a)."""
     o = order_on_natural_numbers()
-    #uncomment if you want to test multiset equality:
+    #comment out if you want to test multiset equality:
     #return True
     assert z3.Solver().check(z3.And(o, multiset_equality([3, 3, 1, 1], [1, 3, 3, 1]))) == z3.sat
     assert z3.Solver().check(z3.And(o, multiset_equality([3, 1, 1, 1], [1, 3, 3, 1]))) == z3.unsat
@@ -287,8 +284,8 @@ def test_multiset_equality():
 def test_multiset_ordering():
     """Test for exercise (b)."""
     o = order_on_natural_numbers()
-    #uncomment if you want to test multiset ordering:
-    return True
+    #comment out if you want to test multiset ordering:
+    #return True
     assert z3.Solver().check(z3.And(o, multiset_ordering_greater([5, 3, 1, 1, 1], [4, 3, 3, 1]))) == z3.sat
     assert z3.Solver().check(z3.And(o, multiset_ordering_greater([10, 5, 3, 1, 1, 1], [10, 4, 3, 3, 1]))) == z3.sat
     assert z3.Solver().check(z3.And(o, multiset_ordering_greater([], []))) == z3.unsat
@@ -312,7 +309,7 @@ def main():
     test_multiset_equality()
     # EXERCISE (B).
     test_multiset_ordering()
-    if len(sys.argv) == 2:
+    if len(sys.argv) == 2: #it was set to 1 so I changed it
         # EXERCISE (C).
         solve(sys.argv[1])
     else:
