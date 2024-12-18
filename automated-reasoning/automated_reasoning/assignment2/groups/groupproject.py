@@ -75,7 +75,7 @@ def get_goodness(assignment: list[int]) -> list[int]:
                for n in range(N) for p in range(P)]) 
   for r in range(0, P)]
 
-def find_better_assignment(lower_bound_attempt):
+def find_assignment(lower_bound_attempt: list):
   V_ASSIGNMENT = [Int(f"A_{n}") for n in range(N)]
   F_ASSIGNMENT_BOUND = [And(a_n >= 0, a_n < P) for a_n in V_ASSIGNMENT]
   F_GROUP_SIZES = [Or(Sum([a_n == p for a_n in V_ASSIGNMENT]) == math.floor(N/P),
@@ -86,7 +86,7 @@ def find_better_assignment(lower_bound_attempt):
     And(get_rank_by_id(n, p) -1 == r, V_ASSIGNMENT[n] == p)
     for n in range(N) for p in range(P)]) for r in range(P)]
   
-  F_LOWER_BOUND_ATTEMPT = [V_GOODNESS[r] <= v for r,v in lower_bound_attempt.items()]
+  F_LOWER_BOUND_ATTEMPT = [V_GOODNESS[r] <= v for r,v in enumerate(lower_bound_attempt)]
   # print(lower_bound_attempt)
   # print(F_LOWER_BOUND_ATTEMPT)
   # if try_rank:
@@ -114,51 +114,37 @@ def find_better_assignment(lower_bound_attempt):
     return res
   except:
     return None
-  
-def optimize_non_zero_ranks(b, lower_bound_knowledge, R) -> list[int]:
-  lower_bound_attempt = copy.deepcopy(lower_bound_knowledge)
-  print("Optimizing non-zero ranks...")
-  for rank in reversed(range(R+1)):
-    if rank == 0:
-      return b
-    print(f"Trying to find an optimization on rank {rank}...")
-    lower_bound_attempt = lower_bound_knowledge
-    while True:
-      lower_bound_attempt[rank] = get_goodness(b)[rank] - 1
-      a = find_better_assignment(lower_bound_attempt)
-      #print("trying ############################                                 ", lower_bound_attempt)
 
-      if a is None:
-        return b
-      else:
-        print(f"Found non-zero optimization on rank {rank}...")
-        print(get_goodness(a), "\n")
-        b = a
-        lower_bound_knowledge = copy.deepcopy(lower_bound_attempt)
+def optimize_solution2(goodness_b, rank):
+  if rank == 0:
+    return find_assignment(goodness_b)
+  decreasing = goodness_b[rank] - 1
+  constraint_a = [N for _ in range(rank)] + [decreasing] + [goodness_b[i] for i in range(rank+1, P)]
+  print(f"\nrank: {rank}")
+  print("previous", goodness_b)
+  print("trying", constraint_a)
+  a = find_assignment(constraint_a)
+  if a is None:
+    return optimize_solution(goodness_b, rank-1)
+  else:
+    return optimize_solution2(get_goodness(a), rank)
 
-def best_solution() -> list[int]:
-  lower_bound_knowledge = {}
-  lower_bound_attempt = {}
-  find_zero_ranks = True
-  b = find_better_assignment(lower_bound_attempt)
-  if b is None:
-    print("Failure")
-    return None
-  print("Found first assignment with goodness")
-  print(get_goodness(b), "\n")
+def optimize_solution(goodness_b, rank):
+  if rank == 0:
+    return find_assignment(goodness_b)
+  constraint_a = [N for _ in range(rank)] + [0] + [goodness_b[i] for i in range(rank+1, P)]
+  print(f"\nrank: {rank}")
+  print("previous", goodness_b)
+  print("trying", constraint_a)
+  a = find_assignment(constraint_a)
+  if a is None:
+    return optimize_solution2(goodness_b, rank)
+  else:
+    return optimize_solution(get_goodness(a), rank-1)
 
-  for rank in reversed(range(P)):
-    lower_bound_attempt[rank] = 0
-    a = find_better_assignment(lower_bound_attempt)
-    if a is None:
-      return optimize_non_zero_ranks(b, lower_bound_knowledge, rank)
-    else:
-      print(f"Found a better assignment with a new zero rank {rank}...")
-      print(get_goodness(a), "\n")
-      b = a
-      lower_bound_knowledge = copy.deepcopy(lower_bound_attempt)
-
-solution = best_solution()
+solution = optimize_solution([N for _ in range(P)], P-1)
+#solution = optimize_solution([N for _ in range(P)], P-1, True)
+#solution = optimize_solution_delta([N for _ in range(P)], P-1, N)
 if solution is not None:
   print_solution(to_names(solution))
 print("****************************************************************************")
