@@ -35,8 +35,6 @@ def var_relation(s: any, t: any, rel: Relation) -> z3.Bool:
 # Task 4(a)
 #############
 
-def count_in_list(value, lst):
-    return z3.Sum([z3.If(var_relation(x,value,Relation.EQUAL), 1, 0) for x in lst])
 
 def multiset_equality(x: list[any], y: list[any]) -> z3.ExprRef:
     """
@@ -47,13 +45,13 @@ def multiset_equality(x: list[any], y: list[any]) -> z3.ExprRef:
     You need to define your own variables as well.
     We wrote a test below, which you can execute by running python trs_solver.py.
     """
+
+    def count_in_list(value, lst):
+        return z3.Sum([z3.If(var_relation(x,value,Relation.EQUAL), 1, 0) for x in lst])
+
     # For all unique i in x, the number of occurences in x should be equal to the 
     # number of occurences in y.
     return z3.And([count_in_list(i,x) == count_in_list(i,y) for i in set(x)])
-    
-
-    #return z3.And([var_relation(count_in_list(i,x), count_in_list(i,y), Relation.EQUAL) for i in set(x)])
-    
 
 #############
 # Task 4(b)
@@ -89,7 +87,7 @@ def multiset_ordering_greater(x: list[any], y: list[any]) -> z3.ExprRef:
     def equal(fi,i):
         return z3.Or([z3.And(var_relation(x[k-1],y[i-1],Relation.EQUAL), k == fi) for k in range(1,n+1)])
 
-    #check if fi is element of sctrict
+    #check if f[i] is element of sctrict
     def included(fi):
         return z3.Or([z3.And(strict[k-1],fi == k) for k in range(1, n+1)])
 
@@ -271,8 +269,6 @@ def order_on_natural_numbers() -> z3.ExprRef:
 def test_multiset_equality():
     """Test for exercise (a)."""
     o = order_on_natural_numbers()
-    #comment out if you want to test multiset equality:
-    #return True
     assert z3.Solver().check(z3.And(o, multiset_equality([3, 3, 1, 1], [1, 3, 3, 1]))) == z3.sat
     assert z3.Solver().check(z3.And(o, multiset_equality([3, 1, 1, 1], [1, 3, 3, 1]))) == z3.unsat
     assert z3.Solver().check(z3.And(o, multiset_equality([], []))) == z3.sat
@@ -284,13 +280,11 @@ def test_multiset_equality():
 def test_multiset_ordering():
     """Test for exercise (b)."""
     o = order_on_natural_numbers()
-    #comment out if you want to test multiset ordering:
-    #return True
     assert z3.Solver().check(z3.And(o, multiset_ordering_greater([5, 3, 1, 1, 1], [4, 3, 3, 1]))) == z3.sat
     assert z3.Solver().check(z3.And(o, multiset_ordering_greater([10, 5, 3, 1, 1, 1], [10, 4, 3, 3, 1]))) == z3.sat
     assert z3.Solver().check(z3.And(o, multiset_ordering_greater([], []))) == z3.unsat
     assert z3.Solver().check(z3.And(o, multiset_ordering_greater([1], [1]))) == z3.unsat
-    assert z3.Solver().check(z3.And(o, multiset_ordering_greater([2], [1]))) == z3.sat
+    assert z3.Solver().check(z3.And(o, multiset_ordering_greater([2], [1]))) == z3.sat 
     assert z3.Solver().check(z3.And(o, multiset_ordering_greater([1, 1, 3], [1, 2, 2]))) == z3.sat
     assert z3.Solver().check(z3.And(o, multiset_ordering_greater([1], [2]))) == z3.unsat
     assert z3.Solver().check(z3.And(o, multiset_ordering_greater([4, 3, 3, 1], [5, 3, 1, 1, 1]))) == z3.unsat
