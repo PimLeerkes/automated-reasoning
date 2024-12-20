@@ -65,28 +65,20 @@ no_duplicates = And([And([Implies(i != j, S[i] != S[j]) for i in range(N)]) for 
 def correct(guess: list[int], n: int):
   return Sum([If(S[i] == get_list(guess)[i], 1, 0) for i in range(N)]) == n
 
-
+#partially correct colors a:
 def wrong_place_correct_color_a(guess, i):
   return And(S[i] != get_list(guess)[i], Or([S[j] == get_list(guess)[i] for j in range(N)]))
 
-
-#partially correct colors a:
 def partially_correct_a(guess, n):
   return Sum([If(wrong_place_correct_color_a(guess, i), 1, 0) for i in range(N)]) == n
 
-
-#helper function for part b
-def count_in_list(value, lst):
-    return Sum([If(x == value, 1, 0) for x in lst])
-
+#partially correct colors b:
 def wrong_place_correct_color_b(guess, i):
   n_solution = Sum([If(And(S[k] == get_list(guess)[i], S[k] != get_list(guess)[k]),1,0) for k in range(N)])
   n_guess_lower_i = Sum([If(And(get_list(guess)[i] == get_list(guess)[j],S[j] != get_list(guess)[j]),1,0) for j in range(i)])
 
   return And(S[i] != get_list(guess)[i], n_solution > n_guess_lower_i, Or([And(S[j] == get_list(guess)[i], get_list(guess)[i] != get_list(guess)[j]) for j in range(N)]))
 
-
-#partially correct colors a:
 def partially_correct_b(guess, n):
   return Sum([If(wrong_place_correct_color_b(guess, i), 1, 0) for i in range(N)]) == n
 
