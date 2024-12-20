@@ -93,10 +93,10 @@ def multiset_ordering_greater(x: list[any], y: list[any]) -> z3.ExprRef:
 
     #the three different properties can be checked for each i:
     def first_property(i):
-        return z3.Implies(included(f[i-1]), greater(f[i-1],i))#z3.Select(x_array, f[i-1]) > z3.Select(y_array, i))
+        return z3.Implies(included(f[i-1]), greater(f[i-1],i))
 
     def second_property(i):
-        return z3.Implies(z3.Not(included(f[i-1])),equal(f[i-1],i))#z3.Select(x_array, f[i-1]) == z3.Select(y_array, i))
+        return z3.Implies(z3.Not(included(f[i-1])),equal(f[i-1],i))
 
     def third_property(i):
         return z3.Implies(z3.Or([f[i-1]==f[j-1] for j in range(1,m+1) if j != i]),z3.Or(included(f[i-1])))
